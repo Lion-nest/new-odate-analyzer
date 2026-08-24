@@ -3,121 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 OCR 座標・精度検証テスト</title>
-    <!-- Tesseract.js (v5) の読み込み -->
+    <title>おだて豚 OCR 精度調整テスト v2</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         body { font-family: sans-serif; background: #222; color: #fff; padding: 10px; padding-bottom: 80px; margin: 0; }
-        h1 { font-size: 1.2rem; text-align: center; }
-        .controls { background: #333; padding: 15px; border-radius: 8px; margin-bottom: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1 { font-size: 1.1rem; text-align: center; }
+        .controls { background: #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         input[type="file"] { width: 100%; font-size: 1rem; color: #fff; }
-        
-        #status-area { margin-top: 10px; text-align: center; font-weight: bold; min-height: 1.2em; }
+        #statusText { margin-top: 8px; text-align: center; font-weight: bold; font-size: 0.9rem; }
         .status-idle { color: #aaa; }
-        .status-processing { color: #ff9f43; animation: blink 1s infinite; }
+        .status-processing { color: #ff9f43; }
         .status-complete { color: #2ecc71; }
-        .status-error { color: #e74c3c; }
-
-        #results-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .result-item { background: #444; padding: 8px; border-radius: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #555; }
-        .label-cell { flex: 1; font-size: 0.9rem; color: #ddd; white-space: nowrap; }
-        
-        .image-cell { width: 100px; text-align: center; background: #000; border-radius: 4px; padding: 2px; }
-        /* クロップ画像を白黒反転させて表示（数字が黒、背景が白）すると人間が見やすい */
-        .crop-preview { max-width: 100px; height: auto; filter: invert(1); border: 1px solid #777; display: block;}
-        
-        .ocr-cell { flex: 1; font-size: 1.2rem; text-align: right; font-weight: bold; padding: 5px; border-radius: 4px; min-width: 60px;}
-        .match { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
-        .mismatch { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
-        .check-toggle { color: #aaa; font-size: 0.8rem; text-decoration: underline; background: none; border: none; padding: 0; cursor: pointer;}
-
-        @keyframes blink { 50% { opacity: 0.5; } }
-        #debug-canvas-container { margin-top: 20px; text-align: center; border-top: 1px solid #555; padding-top: 10px; overflow-x: auto; }
-        #debug-canvas-container h2 { font-size: 1rem; color: #aaa; }
-        canvas#originalCanvas { max-width: 100%; height: auto; border: 1px solid #444; }
+        #results-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .result-item { background: #333; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #444; }
+        .label-cell { font-size: 0.85rem; color: #ccc; width: 90px; }
+        .image-cell { text-align: center; background: #000; border-radius: 4px; padding: 2px; }
+        .crop-preview { max-height: 35px; width: auto; display: block; border: 1px solid #555; }
+        .ocr-cell { font-size: 1.2rem; font-weight: bold; width: 60px; text-align: right; color: #2ecc71; }
+        .raw-text { font-size: 0.7rem; color: #888; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<h1>🐷 OCR 座標・精度検証テスト</h1>
+<h1>🐷 OCR 精度調整テスト v2</h1>
 
 <div class="controls">
-    <input type="file" id="fileInput" accept="image/png, image/jpeg">
-    <div id="status-area">
-        <span id="statusText" class="status-idle">スクリーンショットを選択してください</span>
-    </div>
+    <input type="file" id="fileInput" accept="image/*">
+    <div id="statusText" class="status-idle">スクショを選択してください</div>
 </div>
 
-<div id="results-container">
-    <!-- ここに13箇所の結果が動的に追加されます -->
-</div>
-
-<!-- 元画像の描画と切り抜きを確認するためのデバッグエリア -->
-<div id="debug-canvas-container" style="display:none;">
-    <h2>全エリア切り抜き確認パネル</h2>
-    <canvas id="originalCanvas"></canvas>
-    <p style="font-size:0.8rem; color:#888;">緑枠: 読み取り範囲（%）</p>
-</div>
+<div id="results-container"></div>
 
 <script>
-/**
- * 1. 座標設定（比率 %）
- * 手持ちの2機種でズレる場合は、ここ（x, y）の値を Safari上でデバッグしながら微調整します。
- */
+// 1. 座標微調整：高さを 7.5% -> 4.8% に縮小し、ボタン下部の日本語文字を完全排除
 const cropAreas = [
-  { key: 'target_game', label: '対象ゲーム数', x: 53.0, y: 32.8, w: 15.0, h: 4.4 }, // 数字部分
-  { key: 'btn_1_1',     label: '1段目:投資',   x: 3.5,  y: 38.0, w: 19.5, h: 7.5 },
-  { key: 'btn_1_2',     label: '1段目:②',     x: 27.5, y: 38.0, w: 19.5, h: 7.5 },
-  { key: 'btn_1_3',     label: '1段目:リプ',   x: 51.5, y: 38.0, w: 19.5, h: 7.5 },
-  { key: 'btn_1_4',     label: '1段目:リプV',  x: 75.5, y: 38.0, w: 19.5, h: 7.5 },
-  { key: 'btn_2_1',     label: '2段目:羽根拾', x: 3.5,  y: 52.0, w: 19.5, h: 7.5 },
-  { key: 'btn_2_2',     label: '2段目:V入賞',  x: 27.5, y: 52.0, w: 19.5, h: 7.5 },
-  { key: 'btn_2_3',     label: '2段目:SP',     x: 51.5, y: 52.0, w: 19.5, h: 7.5 },
-  { key: 'btn_2_4',     label: '2段目:SPV',    x: 75.5, y: 52.0, w: 19.5, h: 7.5 },
-  { key: 'btn_3_1',     label: '3段目:拾蹴',   x: 3.5,  y: 66.0, w: 19.5, h: 7.5 },
-  { key: 'btn_3_2',     label: '3段目:当大',   x: 27.5, y: 66.0, w: 19.5, h: 7.5 },
-  { key: 'btn_3_3',     label: '3段目:当中',   x: 51.5, y: 66.0, w: 19.5, h: 7.5 },
-  { key: 'btn_3_4',     label: '3段目:当小',   x: 75.5, y: 66.0, w: 19.5, h: 7.5 },
+  { key: 'target_game', label: '対象ゲーム', x: 54.0, y: 33.0, w: 14.0, h: 4.0 },
+  { key: 'btn_1_1',     label: '1段:投資',   x: 4.0,  y: 38.2, w: 18.5, h: 4.8 },
+  { key: 'btn_1_2',     label: '1段:②',     x: 28.0, y: 38.2, w: 18.5, h: 4.8 },
+  { key: 'btn_1_3',     label: '1段:リプ',   x: 52.0, y: 38.2, w: 18.5, h: 4.8 },
+  { key: 'btn_1_4',     label: '1段:リプV',  x: 76.0, y: 38.2, w: 18.5, h: 4.8 },
+  { key: 'btn_2_1',     label: '2段:羽根拾', x: 4.0,  y: 52.2, w: 18.5, h: 4.8 },
+  { key: 'btn_2_2',     label: '2段:V入賞',  x: 28.0, y: 52.2, w: 18.5, h: 4.8 },
+  { key: 'btn_2_3',     label: '2段:SP',     x: 52.0, y: 52.2, w: 18.5, h: 4.8 },
+  { key: 'btn_2_4',     label: '2段:SPV',    x: 76.0, y: 52.2, w: 18.5, h: 4.8 },
+  { key: 'btn_3_1',     label: '3段:拾蹴',   x: 4.0,  y: 66.2, w: 18.5, h: 4.8 },
+  { key: 'btn_3_2',     label: '3段:当大',   x: 28.0, y: 66.2, w: 18.5, h: 4.8 },
+  { key: 'btn_3_3',     label: '3段:当中',   x: 52.0, y: 66.2, w: 18.5, h: 4.8 },
+  { key: 'btn_3_4',     label: '3段:当小',   x: 76.0, y: 66.2, w: 18.5, h: 4.8 },
 ];
 
-/**
- * 2. OCRの設定（数字専用・1行モード）
- */
-const ocrParams = {
-  tessedit_char_whitelist: '0123456789-', // 数字とハイフンのみ許可
-  tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE, // 1行として認識
-};
-
-// --- グローバル変数 ---
-let worker = null; // OCRワーカー
+let worker = null;
 const fileInput = document.getElementById('fileInput');
 const statusText = document.getElementById('statusText');
 const container = document.getElementById('results-container');
-const originalCanvas = document.getElementById('originalCanvas');
-const originalCtx = originalCanvas.getContext('2d');
 
-/**
- * 初期化：Tesseractワーカーの作成
- */
 async function initOCR() {
-    updateStatus('status-processing', 'OCRエンジン起動中...');
+    statusText.innerText = 'OCR初期化中...';
     worker = await Tesseract.createWorker('eng');
-    await worker.setParameters(ocrParams);
-    updateStatus('status-idle', '準備完了（スクショを選択）');
+    // ホワイトリストにハイフンも許可
+    await worker.setParameters({
+        tessedit_char_whitelist: '0123456789-',
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_RAW_LINE
+    });
+    statusText.innerText = '準備完了（スクショを選択）';
 }
 
-/**
- * ファイル選択イベント
- */
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file || !worker) return;
 
-    // 前回の結果をクリア
     container.innerHTML = '';
-    document.getElementById('debug-canvas-container').style.display = 'none';
-    
-    updateStatus('status-processing', '画像読み込み中...');
+    statusText.className = 'status-processing';
+    statusText.innerText = '画像処理中...';
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -128,162 +85,102 @@ fileInput.addEventListener('change', async (e) => {
     reader.readAsDataURL(file);
 });
 
-/**
- * メイン処理：切り抜き、前処理、OCR、表示
- */
 async function processImage(img) {
-    const { width: imgW, height: imgH } = img;
-    
-    // デバッグ用キャンバスの設定（元画像を描画して枠線を表示）
-    originalCanvas.width = imgW;
-    originalCanvas.height = imgH;
-    originalCtx.drawImage(img, 0, 0);
-    document.getElementById('debug-canvas-container').style.display = 'block';
-
-    updateStatus('status-processing', '13箇所の切り抜き & 解析中...');
+    statusText.innerText = '13箇所を認識中...';
     const startTime = performance.now();
 
-    // 13箇所を順番に解析（iPhone Safariの負荷を考慮し、非同期で順番に回す）
     for (let i = 0; i < cropAreas.length; i++) {
         const area = cropAreas[i];
-        
-        // --- 3. 画像の前処理（切り抜き & 白黒化） ---
-        const { base64, cropPx } = getProcessedCropBase64(img, area);
+        const base64 = getProcessedCropBase64(img, area);
 
-        // デバッグキャンバスに緑枠を描画
-        originalCtx.strokeStyle = '#00ff00';
-        originalCtx.lineWidth = Math.max(2, imgW / 300); // 解像度に合わせて太さを調整
-        originalCtx.strokeRect(cropPx.x, cropPx.y, cropPx.w, cropPx.w); // w, w にして正方形に近く描画（デバッグ用）
-
-        // --- 4. OCR実行 ---
+        // OCR認識
         const { data: { text } } = await worker.recognize(base64);
 
-        // --- 5. 結果の表示（人間が確認しやすいUI） ---
-        createResultUI(area, base64, text);
+        // クリーニング（改行や不要スペースを除去）
+        let cleaned = text.replace(/[^0-9\-]/g, '');
+        if (cleaned === '' || cleaned === '-') cleaned = '-';
+
+        createResultUI(area, base64, cleaned, text);
     }
 
-    const endTime = performance.now();
-    const sec = ((endTime - startTime) / 1000).toFixed(1);
-    updateStatus('status-complete', `解析完了 (${sec}秒)`);
+    const sec = ((performance.now() - startTime) / 1000).toFixed(1);
+    statusText.className = 'status-complete';
+    statusText.innerText = `解析完了 (${sec}秒)`;
 }
 
-/**
- * Canvasを使ってグレースケール -> 二値化 -> クロップを行い、Base64を取得する
- */
+// 画像切り抜き ＋ 白黒二値化 ＋ パディング付与
 function getProcessedCropBase64(imgElement, areaPercent) {
-  const tempCanvas = document.createElement('canvas');
-  const tempCtx = tempCanvas.getContext('2d');
+    const imgW = imgElement.width;
+    const imgH = imgElement.height;
 
-  const imgW = imgElement.width;
-  const imgH = imgElement.height;
+    const cropX = (areaPercent.x / 100) * imgW;
+    const cropY = (areaPercent.y / 100) * imgH;
+    const cropW = (areaPercent.w / 100) * imgW;
+    const cropH = (areaPercent.h / 100) * imgH;
 
-  // 比率（%）からピクセル座標を計算
-  const cropX = (areaPercent.x / 100) * imgW;
-  const cropY = (areaPercent.y / 100) * imgH;
-  const cropW = (areaPercent.w / 100) * imgW;
-  const cropH = (areaPercent.h / 100) * imgH;
+    // 白枠の余白（パディング）を追加してOCRの認識率を高める
+    const padding = 10;
+    const canvas = document.createElement('canvas');
+    canvas.width = cropW + (padding * 2);
+    canvas.height = cropH + (padding * 2);
+    const ctx = canvas.getContext('2d');
 
-  // ワーキングキャンバスのサイズを設定（OCRが認識しやすいよう、少し余白を持つ）
-  // ボタンの文字が小さい場合は、ここで2倍に拡大描画すると精度が上がる場合があります。
-  const scale = (cropW < 60) ? 2 : 1; // 元が小さい場合は2倍に拡大
-  tempCanvas.width = cropW * scale;
-  tempCanvas.height = cropH * scale;
+    // 背景を白で塗りつぶす（Tesseractは白背景・黒文字が最も得意）
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // 拡大描画（ぼやけないようスムージングをオフにする）
-  tempCtx.imageSmoothingEnabled = false;
-  tempCtx.drawImage(
-    imgElement,
-    cropX, cropY, cropW, cropH, // 元画像のソース（クロップ領域）
-    0, 0, tempCanvas.width, tempCanvas.height // キャンバス全体に拡大描画
-  );
+    // 一旦別Canvasで切り抜き
+    const srcCanvas = document.createElement('canvas');
+    srcCanvas.width = cropW;
+    srcCanvas.height = cropH;
+    const srcCtx = srcCanvas.getContext('2d');
+    srcCtx.drawImage(imgElement, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-  // --- 2つの重要点：グレースケール & 二値化 ---
-  const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-  const data = imageData.data;
+    // 二値化処理（白文字 -> 黒文字、背景 -> 白）
+    const imgData = srcCtx.getImageData(0, 0, cropW, cropH);
+    const d = imgData.data;
+    const threshold = 160;
 
-  // 白文字を認識させるための二値化。
-  // 閾値を高めに設定し（200以上）、背景（青・茶・グレー）を真っ黒に、
-  // 白い数字だけを 真っ白（255）に残します。
-  const threshold = 180; 
+    for (let i = 0; i < d.length; i += 4) {
+        const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+        // 元の白文字（明るい部分）を黒(0)に、それ以外を白(255)に反転変換
+        const v = (gray > threshold) ? 0 : 255;
+        d[i] = d[i+1] = d[i+2] = v;
+    }
+    srcCtx.putImageData(imgData, 0, 0);
 
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i+1];
-    const b = data[i+2];
-    
-    // グレースケール化
-    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    
-    // 二値化：閾値より明るければ白、それ以外は真っ黒
-    const finalVal = (gray > threshold) ? 255 : 0;
+    // パディング付きCanvasの中央に描画
+    ctx.drawImage(srcCanvas, padding, padding);
 
-    data[i] = data[i+1] = data[i+2] = finalVal;
-    // data[i+3] (アルファ)は触らない（不透明）
-  }
-
-  // 処理したピクセルデータをCanvasに戻す
-  tempCtx.putImageData(imageData, 0, 0);
-
-  return {
-      base64: tempCanvas.toDataURL('image/png'),
-      cropPx: { x: cropX, y: cropY, w: cropW, h: cropH }
-  };
+    return canvas.toDataURL('image/png');
 }
 
-/**
- * 1項目分の結果UIを作成して追加
- */
-function createResultUI(area, base64, recognizedText) {
+function createResultUI(area, base64, resultText, rawText) {
     const item = document.createElement('div');
     item.className = 'result-item';
 
-    // ラベル（対象ゲーム数、1段目:投資など）
-    const labelCell = document.createElement('div');
-    labelCell.className = 'label-cell';
-    labelCell.innerText = area.label;
+    const label = document.createElement('div');
+    label.className = 'label-cell';
+    label.innerText = area.label;
 
-    // OCRに渡された白黒画像のプレビュー
-    // filter: invert(1) で反転させて表示（人間が見やすいよう数字を黒にする）
-    const imageCell = document.createElement('div');
-    imageCell.className = 'image-cell';
+    const imgCell = document.createElement('div');
+    imgCell.className = 'image-cell';
     const img = new Image();
     img.src = base64;
     img.className = 'crop-preview';
-    imageCell.appendChild(img);
+    imgCell.appendChild(img);
 
-    // OCR認識結果
     const ocrCell = document.createElement('div');
-    const cleanedText = recognizedText.trim();
-    const finalNumber = (cleanedText === '-' || cleanedText === '') ? '0' : cleanedText;
+    ocrCell.className = 'ocr-cell';
+    ocrCell.innerHTML = `<span class="raw-text">(${rawText.trim()})</span>${resultText}`;
 
-    // 「0」と「-」は特に色を変えて強調
-    if (finalNumber === '0') {
-        ocrCell.className = 'ocr-cell mismatch'; // 0は要注意として赤系にする（既存ツールで誤読が多かったため）
-    } else {
-        ocrCell.className = 'ocr-cell match'; // 数字が読めていれば緑系
-    }
-    
-    ocrCell.innerText = finalNumber;
-
-    item.appendChild(labelCell);
-    item.appendChild(imageCell);
+    item.appendChild(label);
+    item.appendChild(imgCell);
     item.appendChild(ocrCell);
     container.appendChild(item);
 }
 
-/**
- * ステータス表示の更新
- */
-function updateStatus(cls, text) {
-    statusText.className = cls;
-    statusText.innerText = text;
-    console.log(`[Status] ${text}`);
-}
-
-// ページロード時にOCRを起動
 initOCR();
-
 </script>
-
 </body>
 </html>
