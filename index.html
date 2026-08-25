@@ -113,11 +113,11 @@ fileInput.addEventListener('change', async (e) => {
 });
 
 async function analyzeWithGemini(apiKey, base64Image, mimeType) {
-    // 安定モデルを指定
+    // 確実に対応している v1 エンドポイントを使用
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const prompt = `
-このパチンコデータアプリのスクリーンショットから、以下の13箇所の【現在の数値】を正確に抽出してJSON形式のみで返してください。
+このパチンコデータアプリのスクリーンショットから、以下の13箇所の【現在の数値】を正確に抽出してJSON形式で返してください。
 ハイフン「-」や未記録の項目は 0 としてください。
 
 1. target_game: 「対象ゲーム数」の右横に書かれている数字
@@ -167,26 +167,43 @@ async function analyzeWithGemini(apiKey, base64Image, mimeType) {
                     }
                 }
             ]
-        }],
-        generationConfig: {
-            response_mime_type: "application/json"
-        }
+        }]
     };
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
+    // 複数のモデル候補を順番に試行（確実に対象モデルを捉えるフォールバック処理）
+    const candidateModels = [
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-pro',
+        'gemini-2.0-flash-exp'
+    ];
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'APIリクエストに失敗しました');
+    let lastError = null;
+    for (const model of candidateModels) {
+        try {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (response.ok) {
+                const resJson = await response.json();
+                let rawText = resJson.candidates[0].content.parts[0].text;
+                // マークダウンの ```json ``` を除去
+                rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                return JSON.parse(rawText);
+            } else {
+                const errData = await response.json();
+                lastError = new Error(errData.error?.message || `Model ${model} failed`);
+            }
+        } catch (e) {
+            lastError = e;
+        }
     }
 
-    const resJson = await response.json();
-    const rawText = resJson.candidates[0].content.parts[0].text;
-    return JSON.parse(rawText);
+    throw lastError || new Error('すべてのGeminiモデルへの接続に失敗しました');
 }
 
 function displayResults(data) {
