@@ -1,123 +1,5 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 Gemini API 高精度OCRテスト</title>
-    <style>
-        body { font-family: sans-serif; background: #1e1e24; color: #fff; padding: 12px; margin: 0; padding-bottom: 60px; }
-        h1 { font-size: 1.1rem; text-align: center; margin-bottom: 12px; }
-        .card { background: #2b2b36; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #3f3f50; }
-        label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 4px; }
-        input[type="password"], input[type="file"] { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #181820; color: #fff; font-size: 0.9rem; margin-bottom: 8px; }
-        button { width: 100%; padding: 10px; background: #3498db; color: #fff; border: none; border-radius: 4px; font-weight: bold; font-size: 0.95rem; cursor: pointer; }
-        button:disabled { background: #555; }
-        #status { text-align: center; font-weight: bold; margin: 10px 0; font-size: 0.9rem; min-height: 1.2em; }
-        .table-res { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-        .table-res th, .table-res td { border: 1px solid #444; padding: 6px 8px; text-align: center; }
-        .table-res th { background: #333; color: #aaa; }
-        .val { font-size: 1.1rem; font-weight: bold; color: #2ecc71; }
-        .preview-img { max-width: 100%; border-radius: 6px; margin-top: 8px; display: none; }
-    </style>
-</head>
-<body>
-
-<h1>🐷 Gemini API 高精度OCRテスト</h1>
-
-<div class="card">
-    <label>Google Gemini APIキー (初回のみ入力・端末に自動保存)</label>
-    <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
-    
-    <label>スクリーンショット画像</label>
-    <input type="file" id="fileInput" accept="image/*">
-    
-    <div id="status" style="color: #aaa;">APIキーを入力してスクショを選択してください</div>
-</div>
-
-<div id="resultCard" class="card" style="display: none;">
-    <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">🎯 認識結果</div>
-    <div style="text-align: center; margin-bottom: 10px; font-size: 1rem;">
-        対象ゲーム数: <span id="res_target_game" class="val">-</span>
-    </div>
-    
-    <table class="table-res">
-        <tr>
-            <th>1段目</th>
-            <td>投資<br><span id="res_invest" class="val">-</span></td>
-            <td>②<br><span id="res_naki2" class="val">-</span></td>
-            <td>リプ<br><span id="res_replay" class="val">-</span></td>
-            <td>リプV<br><span id="res_rep_v" class="val">-</span></td>
-        </tr>
-        <tr>
-            <th>2段目</th>
-            <td>羽根拾<br><span id="res_pick" class="val">-</span></td>
-            <td>V入賞<br><span id="res_v_hit" class="val">-</span></td>
-            <td>SP<br><span id="res_sp" class="val">-</span></td>
-            <td>SP→V<br><span id="res_sp_v" class="val">-</span></td>
-        </tr>
-        <tr>
-            <th>3段目</th>
-            <td>拾蹴<br><span id="res_kick" class="val">-</span></td>
-            <td>当大(10R)<br><span id="res_r10" class="val">-</span></td>
-            <td>当中(5R)<br><span id="res_r5" class="val">-</span></td>
-            <td>当小(3R)<br><span id="res_r3" class="val">-</span></td>
-        </tr>
-    </table>
-
-    <img id="preview" class="preview-img">
-</div>
-
-<script>
-const apiKeyInput = document.getElementById('apiKeyInput');
-const fileInput = document.getElementById('fileInput');
-const statusDiv = document.getElementById('status');
-const resultCard = document.getElementById('resultCard');
-const previewImg = document.getElementById('preview');
-
-// ローカルストレージからAPIキーを復元
-const savedKey = localStorage.getItem('gemini_api_key');
-if (savedKey) apiKeyInput.value = savedKey;
-
-apiKeyInput.addEventListener('change', () => {
-    localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
-});
-
-fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    const apiKey = apiKeyInput.value.trim();
-    if (!file) return;
-    if (!apiKey) {
-        alert('Gemini APIキーを入力してください');
-        return;
-    }
-
-    statusDiv.style.color = '#ff9f43';
-    statusDiv.innerText = 'Geminiで高精度解析中...';
-
-    // プレビュー表示
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-        const base64Data = evt.target.result.split(',')[1];
-        previewImg.src = evt.target.result;
-        previewImg.style.display = 'block';
-
-        try {
-            const data = await analyzeWithGemini(apiKey, base64Data, file.type || 'image/jpeg');
-            displayResults(data);
-            statusDiv.style.color = '#2ecc71';
-            statusDiv.innerText = '解析完了！';
-        } catch (err) {
-            console.error(err);
-            statusDiv.style.color = '#e74c3c';
-            statusDiv.innerText = 'エラー: ' + err.message;
-        }
-    };
-    reader.readAsDataURL(file);
-});
-
 async function analyzeWithGemini(apiKey, base64Image, mimeType) {
-    // 2026年現在の推奨モデル: gemini-2.5-flash
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const prompt = `
 このパチンコデータアプリのスクリーンショットから、以下の13箇所の【現在の数値】を正確に抽出してJSON形式のみで返してください。
@@ -141,7 +23,7 @@ async function analyzeWithGemini(apiKey, base64Image, mimeType) {
      - r5: 左から3番目（当中の上）
      - r3: 右端（当小の上）
 
-必ず以下のJSON構造のみを出力してください（マークダウンや余計な解説は不要）:
+必ず以下のJSON構造のみを出力してください:
 {
   "target_game": 0,
   "invest": 0,
@@ -191,24 +73,3 @@ async function analyzeWithGemini(apiKey, base64Image, mimeType) {
     const rawText = resJson.candidates[0].content.parts[0].text;
     return JSON.parse(rawText);
 }
-
-function displayResults(data) {
-    document.getElementById('res_target_game').innerText = data.target_game;
-    document.getElementById('res_invest').innerText = data.invest;
-    document.getElementById('res_naki2').innerText = data.naki2;
-    document.getElementById('res_replay').innerText = data.replay;
-    document.getElementById('res_rep_v').innerText = data.rep_v;
-    document.getElementById('res_pick').innerText = data.pick;
-    document.getElementById('res_v_hit').innerText = data.v_hit;
-    document.getElementById('res_sp').innerText = data.sp;
-    document.getElementById('res_sp_v').innerText = data.sp_v;
-    document.getElementById('res_kick').innerText = data.kick;
-    document.getElementById('res_r10').innerText = data.r10;
-    document.getElementById('res_r5').innerText = data.r5;
-    document.getElementById('res_r3').innerText = data.r3;
-    resultCard.style.display = 'block';
-}
-</script>
-
-</body>
-</html>
