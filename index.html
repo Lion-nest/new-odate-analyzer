@@ -3,188 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 OCR 精度調整テスト v3</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <title>おだて豚 Gemini API 高精度OCRテスト</title>
     <style>
-        body { font-family: sans-serif; background: #222; color: #fff; padding: 10px; padding-bottom: 80px; margin: 0; }
-        h1 { font-size: 1.1rem; text-align: center; }
-        .controls { background: #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        input[type="file"] { width: 100%; font-size: 1rem; color: #fff; }
-        #statusText { margin-top: 8px; text-align: center; font-weight: bold; font-size: 0.9rem; }
-        .status-idle { color: #aaa; }
-        .status-processing { color: #ff9f43; }
-        .status-complete { color: #2ecc71; }
-        #results-container { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .result-item { background: #333; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #444; }
-        .label-cell { font-size: 0.85rem; color: #ccc; width: 90px; }
-        .image-cell { text-align: center; background: #000; border-radius: 4px; padding: 2px; }
-        .crop-preview { max-height: 35px; width: auto; display: block; border: 1px solid #555; }
-        .ocr-cell { font-size: 1.2rem; font-weight: bold; width: 70px; text-align: right; color: #2ecc71; }
-        .raw-text { font-size: 0.7rem; color: #888; margin-right: 5px; }
+        body { font-family: sans-serif; background: #1e1e24; color: #fff; padding: 12px; margin: 0; padding-bottom: 60px; }
+        h1 { font-size: 1.1rem; text-align: center; margin-bottom: 12px; }
+        .card { background: #2b2b36; padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #3f3f50; }
+        label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 4px; }
+        input[type="password"], input[type="file"] { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #181820; color: #fff; font-size: 0.9rem; margin-bottom: 8px; }
+        button { width: 100%; padding: 10px; background: #3498db; color: #fff; border: none; border-radius: 4px; font-weight: bold; font-size: 0.95rem; cursor: pointer; }
+        button:disabled { background: #555; }
+        #status { text-align: center; font-weight: bold; margin: 10px 0; font-size: 0.9rem; min-height: 1.2em; }
+        .table-res { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .table-res th, .table-res td { border: 1px solid #444; padding: 6px 8px; text-align: center; }
+        .table-res th { background: #333; color: #aaa; }
+        .val { font-size: 1.1rem; font-weight: bold; color: #2ecc71; }
+        .preview-img { max-width: 100%; border-radius: 6px; margin-top: 8px; display: none; }
     </style>
 </head>
 <body>
 
-<h1>🐷 OCR 精度調整テスト v3</h1>
+<h1>🐷 Gemini API 高精度OCRテスト</h1>
 
-<div class="controls">
+<div class="card">
+    <label>Google Gemini APIキー (初回のみ入力・端末に自動保存)</label>
+    <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+    
+    <label>スクリーンショット画像</label>
     <input type="file" id="fileInput" accept="image/*">
-    <div id="statusText" class="status-idle">スクショを選択してください</div>
+    
+    <div id="status" style="color: #aaa;">APIキーを入力してスクショを選択してください</div>
 </div>
 
-<div id="results-container"></div>
+<div id="resultCard" class="card" style="display: none;">
+    <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">🎯 認識結果</div>
+    <div style="text-align: center; margin-bottom: 10px; font-size: 1rem;">
+        対象ゲーム数: <span id="res_target_game" class="val">-</span>
+    </div>
+    
+    <table class="table-res">
+        <tr>
+            <th>1段目</th>
+            <td>投資<br><span id="res_invest" class="val">-</span></td>
+            <td>②<br><span id="res_naki2" class="val">-</span></td>
+            <td>リプ<br><span id="res_replay" class="val">-</span></td>
+            <td>リプV<br><span id="res_rep_v" class="val">-</span></td>
+        </tr>
+        <tr>
+            <th>2段目</th>
+            <td>羽根拾<br><span id="res_pick" class="val">-</span></td>
+            <td>V入賞<br><span id="res_v_hit" class="val">-</span></td>
+            <td>SP<br><span id="res_sp" class="val">-</span></td>
+            <td>SP→V<br><span id="res_sp_v" class="val">-</span></td>
+        </tr>
+        <tr>
+            <th>3段目</th>
+            <td>拾蹴<br><span id="res_kick" class="val">-</span></td>
+            <td>当大(10R)<br><span id="res_r10" class="val">-</span></td>
+            <td>当中(5R)<br><span id="res_r5" class="val">-</span></td>
+            <td>当小(3R)<br><span id="res_r3" class="val">-</span></td>
+        </tr>
+    </table>
+
+    <img id="preview" class="preview-img">
+</div>
 
 <script>
-// 座標微調整：対象ゲームの「数」を除去、ボタン位置を最適化
-const cropAreas = [
-  // xを 54.0 -> 56.5 に右シフトして「数」を完全に外す、yとhで上下の枠線も除外
-  { key: 'target_game', label: '対象ゲーム', x: 56.5, y: 33.6, w: 12.0, h: 3.2, isTargetGame: true },
-  { key: 'btn_1_1',     label: '1段:投資',   x: 4.0,  y: 38.0, w: 18.5, h: 4.8 },
-  { key: 'btn_1_2',     label: '1段:②',     x: 28.0, y: 38.0, w: 18.5, h: 4.8 },
-  { key: 'btn_1_3',     label: '1段:リプ',   x: 52.0, y: 38.0, w: 18.5, h: 4.8 },
-  { key: 'btn_1_4',     label: '1段:リプV',  x: 76.0, y: 38.0, w: 18.5, h: 4.8 },
-  { key: 'btn_2_1',     label: '2段:羽根拾', x: 4.0,  y: 52.0, w: 18.5, h: 4.8 },
-  { key: 'btn_2_2',     label: '2段:V入賞',  x: 28.0, y: 52.0, w: 18.5, h: 4.8 },
-  { key: 'btn_2_3',     label: '2段:SP',     x: 52.0, y: 52.0, w: 18.5, h: 4.8 },
-  { key: 'btn_2_4',     label: '2段:SPV',    x: 76.0, y: 52.0, w: 18.5, h: 4.8 },
-  { key: 'btn_3_1',     label: '3段:拾蹴',   x: 4.0,  y: 66.0, w: 18.5, h: 4.8 },
-  { key: 'btn_3_2',     label: '3段:当大',   x: 28.0, y: 66.0, w: 18.5, h: 4.8 },
-  { key: 'btn_3_3',     label: '3段:当中',   x: 52.0, y: 66.0, w: 18.5, h: 4.8 },
-  { key: 'btn_3_4',     label: '3段:当小',   x: 76.0, y: 66.0, w: 18.5, h: 4.8 },
-];
-
-let worker = null;
+const apiKeyInput = document.getElementById('apiKeyInput');
 const fileInput = document.getElementById('fileInput');
-const statusText = document.getElementById('statusText');
-const container = document.getElementById('results-container');
+const statusDiv = document.getElementById('status');
+const resultCard = document.getElementById('resultCard');
+const previewImg = document.getElementById('preview');
 
-async function initOCR() {
-    statusText.innerText = 'OCR初期化中...';
-    worker = await Tesseract.createWorker('eng');
-    await worker.setParameters({
-        tessedit_char_whitelist: '0123456789-',
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
-    });
-    statusText.innerText = '準備完了（スクショを選択）';
-}
+// ローカルストレージからAPIキーを復元
+const savedKey = localStorage.getItem('gemini_api_key');
+if (savedKey) apiKeyInput.value = savedKey;
+
+apiKeyInput.addEventListener('change', () => {
+    localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
+});
 
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
-    if (!file || !worker) return;
+    const apiKey = apiKeyInput.value.trim();
+    if (!file) return;
+    if (!apiKey) {
+        alert('Gemini APIキーを入力してください');
+        return;
+    }
 
-    container.innerHTML = '';
-    statusText.className = 'status-processing';
-    statusText.innerText = '画像処理中...';
+    statusDiv.style.color = '#ff9f43';
+    statusDiv.innerText = 'Geminiで高精度解析中...';
 
+    // プレビュー表示
     const reader = new FileReader();
-    reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => processImage(img);
-        img.src = event.target.result;
+    reader.onload = async (evt) => {
+        const base64Data = evt.target.result.split(',')[1];
+        previewImg.src = evt.target.result;
+        previewImg.style.display = 'block';
+
+        try {
+            const data = await analyzeWithGemini(apiKey, base64Data, file.type || 'image/jpeg');
+            displayResults(data);
+            statusDiv.style.color = '#2ecc71';
+            statusDiv.innerText = '解析完了！';
+        } catch (err) {
+            console.error(err);
+            statusDiv.style.color = '#e74c3c';
+            statusDiv.innerText = 'エラー: ' + err.message;
+        }
     };
     reader.readAsDataURL(file);
 });
 
-async function processImage(img) {
-    statusText.innerText = '13箇所を認識中...';
-    const startTime = performance.now();
+async function analyzeWithGemini(apiKey, base64Image, mimeType) {
+    // 2026年現在の推奨モデル: gemini-2.5-flash
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-    for (let i = 0; i < cropAreas.length; i++) {
-        const area = cropAreas[i];
-        const base64 = getProcessedCropBase64(img, area);
+    const prompt = `
+このパチンコデータアプリのスクリーンショットから、以下の13箇所の【現在の数値】を正確に抽出してJSON形式のみで返してください。
+ハイフン「-」や未記録の項目は 0 としてください。
 
-        const { data: { text } } = await worker.recognize(base64);
+1. target_game: 「対象ゲーム数」の右横に書かれている数字
+2. 4x4のボタングリッドの上から3段（計12個）のボタン中央にある白い大きな数字：
+   - 1段目:
+     - invest: 左端（お金のアイコンの上）
+     - naki2: 左から2番目（②の上）
+     - replay: 左から3番目（リプレイの上）
+     - rep_v: 右端（リプ→Vの上）
+   - 2段目:
+     - pick: 左端（羽根拾の上）
+     - v_hit: 左から2番目（V入賞の上）
+     - sp: 左から3番目（SPの上）
+     - sp_v: 右端（SP→Vの上）
+   - 3段目:
+     - kick: 左端（拾い→蹴りの上）
+     - r10: 左から2番目（当大の上）
+     - r5: 左から3番目（当中の上）
+     - r3: 右端（当小の上）
 
-        // 数字とハイフンのみ抽出
-        let cleaned = text.replace(/[^0-9\-]/g, '').trim();
-        
-        // 対象ゲーム数にはハイフンは存在しないためハイフンも除去
-        if (area.isTargetGame) {
-            cleaned = cleaned.replace(/-/g, '');
+必ず以下のJSON構造のみを出力してください（マークダウンや余計な解説は不要）:
+{
+  "target_game": 0,
+  "invest": 0,
+  "naki2": 0,
+  "replay": 0,
+  "rep_v": 0,
+  "pick": 0,
+  "v_hit": 0,
+  "sp": 0,
+  "sp_v": 0,
+  "kick": 0,
+  "r10": 0,
+  "r5": 0,
+  "r3": 0
+}
+`;
+
+    const requestBody = {
+        contents: [{
+            parts: [
+                { text: prompt },
+                {
+                    inline_data: {
+                        mime_type: mimeType,
+                        data: base64Image
+                    }
+                }
+            ]
+        }],
+        generationConfig: {
+            response_mime_type: "application/json"
         }
+    };
 
-        if (cleaned === '' || cleaned === '-') cleaned = '-';
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
 
-        createResultUI(area, base64, cleaned, text);
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'APIリクエストに失敗しました');
     }
 
-    const sec = ((performance.now() - startTime) / 1000).toFixed(1);
-    statusText.className = 'status-complete';
-    statusText.innerText = `解析完了 (${sec}秒)`;
+    const resJson = await response.json();
+    const rawText = resJson.candidates[0].content.parts[0].text;
+    return JSON.parse(rawText);
 }
 
-function getProcessedCropBase64(imgElement, areaPercent) {
-    const imgW = imgElement.width;
-    const imgH = imgElement.height;
-
-    const cropX = (areaPercent.x / 100) * imgW;
-    const cropY = (areaPercent.y / 100) * imgH;
-    const cropW = (areaPercent.w / 100) * imgW;
-    const cropH = (areaPercent.h / 100) * imgH;
-
-    // 認識精度向上のため、画像を3倍に拡大してCanvasに展開
-    const scale = 3;
-    const padding = 15;
-    const canvas = document.createElement('canvas');
-    canvas.width = (cropW * scale) + (padding * 2);
-    canvas.height = (cropH * scale) + (padding * 2);
-    const ctx = canvas.getContext('2d');
-
-    // 白背景で塗りつぶし
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const srcCanvas = document.createElement('canvas');
-    srcCanvas.width = cropW;
-    srcCanvas.height = cropH;
-    const srcCtx = srcCanvas.getContext('2d');
-    srcCtx.drawImage(imgElement, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-
-    // 二値化処理
-    const imgData = srcCtx.getImageData(0, 0, cropW, cropH);
-    const d = imgData.data;
-    const threshold = 150; // 閾値を少し下げて文字の輪郭の欠けを防ぐ
-
-    for (let i = 0; i < d.length; i += 4) {
-        const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-        const v = (gray > threshold) ? 0 : 255;
-        d[i] = d[i+1] = d[i+2] = v;
-    }
-    srcCtx.putImageData(imgData, 0, 0);
-
-    // 拡大して中央に描画
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(srcCanvas, 0, 0, cropW, cropH, padding, padding, cropW * scale, cropH * scale);
-
-    return canvas.toDataURL('image/png');
+function displayResults(data) {
+    document.getElementById('res_target_game').innerText = data.target_game;
+    document.getElementById('res_invest').innerText = data.invest;
+    document.getElementById('res_naki2').innerText = data.naki2;
+    document.getElementById('res_replay').innerText = data.replay;
+    document.getElementById('res_rep_v').innerText = data.rep_v;
+    document.getElementById('res_pick').innerText = data.pick;
+    document.getElementById('res_v_hit').innerText = data.v_hit;
+    document.getElementById('res_sp').innerText = data.sp;
+    document.getElementById('res_sp_v').innerText = data.sp_v;
+    document.getElementById('res_kick').innerText = data.kick;
+    document.getElementById('res_r10').innerText = data.r10;
+    document.getElementById('res_r5').innerText = data.r5;
+    document.getElementById('res_r3').innerText = data.r3;
+    resultCard.style.display = 'block';
 }
-
-function createResultUI(area, base64, resultText, rawText) {
-    const item = document.createElement('div');
-    item.className = 'result-item';
-
-    const label = document.createElement('div');
-    label.className = 'label-cell';
-    label.innerText = area.label;
-
-    const imgCell = document.createElement('div');
-    imgCell.className = 'image-cell';
-    const img = new Image();
-    img.src = base64;
-    img.className = 'crop-preview';
-    imgCell.appendChild(img);
-
-    const ocrCell = document.createElement('div');
-    ocrCell.className = 'ocr-cell';
-    ocrCell.innerHTML = `<span class="raw-text">(${rawText.trim()})</span>${resultText}`;
-
-    item.appendChild(label);
-    item.appendChild(imgCell);
-    item.appendChild(ocrCell);
-    container.appendChild(item);
-}
-
-initOCR();
 </script>
+
 </body>
 </html>
