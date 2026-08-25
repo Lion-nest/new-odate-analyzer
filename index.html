@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 OCR 精度調整テスト v2</title>
+    <title>おだて豚 OCR 精度調整テスト v3</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         body { font-family: sans-serif; background: #222; color: #fff; padding: 10px; padding-bottom: 80px; margin: 0; }
@@ -19,13 +19,13 @@
         .label-cell { font-size: 0.85rem; color: #ccc; width: 90px; }
         .image-cell { text-align: center; background: #000; border-radius: 4px; padding: 2px; }
         .crop-preview { max-height: 35px; width: auto; display: block; border: 1px solid #555; }
-        .ocr-cell { font-size: 1.2rem; font-weight: bold; width: 60px; text-align: right; color: #2ecc71; }
+        .ocr-cell { font-size: 1.2rem; font-weight: bold; width: 70px; text-align: right; color: #2ecc71; }
         .raw-text { font-size: 0.7rem; color: #888; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<h1>🐷 OCR 精度調整テスト v2</h1>
+<h1>🐷 OCR 精度調整テスト v3</h1>
 
 <div class="controls">
     <input type="file" id="fileInput" accept="image/*">
@@ -35,21 +35,22 @@
 <div id="results-container"></div>
 
 <script>
-// 1. 座標微調整：高さを 7.5% -> 4.8% に縮小し、ボタン下部の日本語文字を完全排除
+// 座標微調整：対象ゲームの「数」を除去、ボタン位置を最適化
 const cropAreas = [
-  { key: 'target_game', label: '対象ゲーム', x: 54.0, y: 33.0, w: 14.0, h: 4.0 },
-  { key: 'btn_1_1',     label: '1段:投資',   x: 4.0,  y: 38.2, w: 18.5, h: 4.8 },
-  { key: 'btn_1_2',     label: '1段:②',     x: 28.0, y: 38.2, w: 18.5, h: 4.8 },
-  { key: 'btn_1_3',     label: '1段:リプ',   x: 52.0, y: 38.2, w: 18.5, h: 4.8 },
-  { key: 'btn_1_4',     label: '1段:リプV',  x: 76.0, y: 38.2, w: 18.5, h: 4.8 },
-  { key: 'btn_2_1',     label: '2段:羽根拾', x: 4.0,  y: 52.2, w: 18.5, h: 4.8 },
-  { key: 'btn_2_2',     label: '2段:V入賞',  x: 28.0, y: 52.2, w: 18.5, h: 4.8 },
-  { key: 'btn_2_3',     label: '2段:SP',     x: 52.0, y: 52.2, w: 18.5, h: 4.8 },
-  { key: 'btn_2_4',     label: '2段:SPV',    x: 76.0, y: 52.2, w: 18.5, h: 4.8 },
-  { key: 'btn_3_1',     label: '3段:拾蹴',   x: 4.0,  y: 66.2, w: 18.5, h: 4.8 },
-  { key: 'btn_3_2',     label: '3段:当大',   x: 28.0, y: 66.2, w: 18.5, h: 4.8 },
-  { key: 'btn_3_3',     label: '3段:当中',   x: 52.0, y: 66.2, w: 18.5, h: 4.8 },
-  { key: 'btn_3_4',     label: '3段:当小',   x: 76.0, y: 66.2, w: 18.5, h: 4.8 },
+  // xを 54.0 -> 56.5 に右シフトして「数」を完全に外す、yとhで上下の枠線も除外
+  { key: 'target_game', label: '対象ゲーム', x: 56.5, y: 33.6, w: 12.0, h: 3.2, isTargetGame: true },
+  { key: 'btn_1_1',     label: '1段:投資',   x: 4.0,  y: 38.0, w: 18.5, h: 4.8 },
+  { key: 'btn_1_2',     label: '1段:②',     x: 28.0, y: 38.0, w: 18.5, h: 4.8 },
+  { key: 'btn_1_3',     label: '1段:リプ',   x: 52.0, y: 38.0, w: 18.5, h: 4.8 },
+  { key: 'btn_1_4',     label: '1段:リプV',  x: 76.0, y: 38.0, w: 18.5, h: 4.8 },
+  { key: 'btn_2_1',     label: '2段:羽根拾', x: 4.0,  y: 52.0, w: 18.5, h: 4.8 },
+  { key: 'btn_2_2',     label: '2段:V入賞',  x: 28.0, y: 52.0, w: 18.5, h: 4.8 },
+  { key: 'btn_2_3',     label: '2段:SP',     x: 52.0, y: 52.0, w: 18.5, h: 4.8 },
+  { key: 'btn_2_4',     label: '2段:SPV',    x: 76.0, y: 52.0, w: 18.5, h: 4.8 },
+  { key: 'btn_3_1',     label: '3段:拾蹴',   x: 4.0,  y: 66.0, w: 18.5, h: 4.8 },
+  { key: 'btn_3_2',     label: '3段:当大',   x: 28.0, y: 66.0, w: 18.5, h: 4.8 },
+  { key: 'btn_3_3',     label: '3段:当中',   x: 52.0, y: 66.0, w: 18.5, h: 4.8 },
+  { key: 'btn_3_4',     label: '3段:当小',   x: 76.0, y: 66.0, w: 18.5, h: 4.8 },
 ];
 
 let worker = null;
@@ -60,10 +61,9 @@ const container = document.getElementById('results-container');
 async function initOCR() {
     statusText.innerText = 'OCR初期化中...';
     worker = await Tesseract.createWorker('eng');
-    // ホワイトリストにハイフンも許可
     await worker.setParameters({
         tessedit_char_whitelist: '0123456789-',
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_RAW_LINE
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
     });
     statusText.innerText = '準備完了（スクショを選択）';
 }
@@ -93,11 +93,16 @@ async function processImage(img) {
         const area = cropAreas[i];
         const base64 = getProcessedCropBase64(img, area);
 
-        // OCR認識
         const { data: { text } } = await worker.recognize(base64);
 
-        // クリーニング（改行や不要スペースを除去）
-        let cleaned = text.replace(/[^0-9\-]/g, '');
+        // 数字とハイフンのみ抽出
+        let cleaned = text.replace(/[^0-9\-]/g, '').trim();
+        
+        // 対象ゲーム数にはハイフンは存在しないためハイフンも除去
+        if (area.isTargetGame) {
+            cleaned = cleaned.replace(/-/g, '');
+        }
+
         if (cleaned === '' || cleaned === '-') cleaned = '-';
 
         createResultUI(area, base64, cleaned, text);
@@ -108,7 +113,6 @@ async function processImage(img) {
     statusText.innerText = `解析完了 (${sec}秒)`;
 }
 
-// 画像切り抜き ＋ 白黒二値化 ＋ パディング付与
 function getProcessedCropBase64(imgElement, areaPercent) {
     const imgW = imgElement.width;
     const imgH = imgElement.height;
@@ -118,39 +122,39 @@ function getProcessedCropBase64(imgElement, areaPercent) {
     const cropW = (areaPercent.w / 100) * imgW;
     const cropH = (areaPercent.h / 100) * imgH;
 
-    // 白枠の余白（パディング）を追加してOCRの認識率を高める
-    const padding = 10;
+    // 認識精度向上のため、画像を3倍に拡大してCanvasに展開
+    const scale = 3;
+    const padding = 15;
     const canvas = document.createElement('canvas');
-    canvas.width = cropW + (padding * 2);
-    canvas.height = cropH + (padding * 2);
+    canvas.width = (cropW * scale) + (padding * 2);
+    canvas.height = (cropH * scale) + (padding * 2);
     const ctx = canvas.getContext('2d');
 
-    // 背景を白で塗りつぶす（Tesseractは白背景・黒文字が最も得意）
+    // 白背景で塗りつぶし
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 一旦別Canvasで切り抜き
     const srcCanvas = document.createElement('canvas');
     srcCanvas.width = cropW;
     srcCanvas.height = cropH;
     const srcCtx = srcCanvas.getContext('2d');
     srcCtx.drawImage(imgElement, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-    // 二値化処理（白文字 -> 黒文字、背景 -> 白）
+    // 二値化処理
     const imgData = srcCtx.getImageData(0, 0, cropW, cropH);
     const d = imgData.data;
-    const threshold = 160;
+    const threshold = 150; // 閾値を少し下げて文字の輪郭の欠けを防ぐ
 
     for (let i = 0; i < d.length; i += 4) {
         const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-        // 元の白文字（明るい部分）を黒(0)に、それ以外を白(255)に反転変換
         const v = (gray > threshold) ? 0 : 255;
         d[i] = d[i+1] = d[i+2] = v;
     }
     srcCtx.putImageData(imgData, 0, 0);
 
-    // パディング付きCanvasの中央に描画
-    ctx.drawImage(srcCanvas, padding, padding);
+    // 拡大して中央に描画
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(srcCanvas, 0, 0, cropW, cropH, padding, padding, cropW * scale, cropH * scale);
 
     return canvas.toDataURL('image/png');
 }
