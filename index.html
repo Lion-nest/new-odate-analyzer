@@ -3,497 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード</title>
+    <title>おだて豚 解析診断ツール (v1.0)</title>
     <style>
         :root {
             --bg-main: #141419;
             --bg-card: #1f1f28;
-            --bg-input: #121216;
             --border-color: #333344;
             --accent-green: #2ecc71;
             --accent-blue: #3498db;
             --accent-yellow: #f1c40f;
             --text-main: #f0f0f0;
-            --text-sub: #8f8f9d;
         }
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 12px; padding-bottom: 120px; font-size: 14px; }
-        h1 { font-size: 1.1rem; text-align: center; margin: 4px 0 12px 0; color: #fff; }
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        label { font-size: 0.75rem; color: var(--text-sub); display: block; margin-bottom: 3px; }
-        input, select { width: 100%; padding: 8px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 0.9rem; }
-        button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; }
-        .btn-main { background: var(--accent-blue); color: #fff; width: 100%; margin-top: 6px; }
-        .btn-save { background: var(--accent-green); color: #000; width: 100%; margin-top: 8px; font-size: 1rem; }
-        #status { text-align: center; font-size: 0.8rem; margin-top: 6px; min-height: 1.2em; font-weight: bold; }
-        
-        /* 比較テーブル */
-        .table-wrap { overflow-x: auto; margin-top: 8px; }
-        table.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; }
-        table.cmp-table th, table.cmp-table td { border: 1px solid var(--border-color); padding: 6px 4px; }
-        table.cmp-table th { background: #262633; color: #bbb; }
-        .col-header { font-size: 0.75rem; font-weight: bold; }
-        .val-hl { font-size: 0.95rem; font-weight: bold; color: var(--accent-green); }
-
-        /* 下部固定ポチバー */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 8px 12px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
-        .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-        .pochi-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-        .pochi-btn { flex: 0 0 auto; background: #2c2c3d; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 6px 12px; font-size: 0.85rem; font-weight: bold; }
-        .pochi-btn.active { background: var(--accent-yellow); color: #000; border-color: #f39c12; }
-        .badge-btn { background: #3a3a4c; color: #fff; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 14px; font-size: 14px; }
+        h1 { font-size: 1.15rem; text-align: center; color: var(--accent-yellow); margin-bottom: 16px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+        label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 4px; }
+        input { width: 100%; padding: 10px; background: #111; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 0.9rem; margin-bottom: 8px; }
+        button { width: 100%; padding: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; margin-top: 6px; }
+        .btn-test1 { background: var(--accent-blue); color: #fff; }
+        .btn-test2 { background: var(--accent-green); color: #000; }
+        .log-box { background: #000; border: 1px solid #444; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; min-height: 80px; max-height: 250px; overflow-y: auto; margin-top: 8px; }
+        .ok { color: var(--accent-green); }
+        .ng { color: #e74c3c; }
     </style>
 </head>
 <body>
 
-<h1>🐷 おだて豚 解析ダッシュボード</h1>
+<h1>🐷 おだて豚 解析診断ツール <span style="color:#fff; background:#e67e22; padding:2px 6px; border-radius:4px; font-size:0.8rem;">v1.0</span></h1>
 
 <div class="card">
-    <div class="grid-3">
-        <div>
-            <label>記録日</label>
-            <input type="date" id="inputDate">
-        </div>
-        <div>
-            <label>店舗名</label>
-            <input type="text" id="inputShop" placeholder="A店">
-        </div>
-        <div>
-            <label>台番号</label>
-            <input type="text" id="inputMachine" placeholder="21">
-        </div>
-    </div>
-    <div class="grid-2" style="margin-top: 6px;">
-        <div>
-            <label>記録者</label>
-            <select id="inputRecorder">
-                <option value="自分">自分</option>
-                <option value="けん">けん</option>
-            </select>
-        </div>
-        <div>
-            <label>過去台の比較</label>
-            <select id="selectPastData">
-                <option value="">過去データなし</option>
-            </select>
-        </div>
-    </div>
+    <label>① Gemini APIキー</label>
+    <input type="password" id="apiKey" placeholder="AIzaSy...">
+
+    <label>② GAS WebApp URL</label>
+    <input type="text" id="gasUrl" placeholder="https://script.google.com/...">
 </div>
 
 <div class="card">
-    <div class="grid-2">
-        <div>
-            <label>Gemini APIキー</label>
-            <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
-        </div>
-        <div>
-            <label>GAS WebApp URL</label>
-            <input type="text" id="gasUrlInput" placeholder="https://script.google.com/...">
-        </div>
-    </div>
-    <label style="margin-top: 8px;">📷 スクリーンショット追加 (10ポチ刻み)</label>
+    <div style="font-weight: bold; color: var(--accent-blue);">【テスト1】Gemini API 接続＆モデル自動判別</div>
+    <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">画像を使わず、APIキーと通信できるか＆どのモデルが使えるかを直接テストします。</div>
+    <button class="btn-test1" id="btnTestApi">① Gemini API 接続テスト実行</button>
+    <div id="logApi" class="log-box">（テスト未実行）</div>
+</div>
+
+<div class="card">
+    <div style="font-weight: bold; color: var(--accent-green);">【テスト2】スクショ画像 OCR読み取り</div>
+    <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">スクショを選択して、13項目の数値が正しくJSON抽出できるかをテストします。</div>
     <input type="file" id="fileInput" accept="image/*">
-    <div id="status">準備完了</div>
+    <div id="logOcr" class="log-box">（画像未選択）</div>
 </div>
 
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-weight: bold;">📊 リアルタイム分析</span>
-        <button id="btnFetchPast" class="badge-btn" style="background: var(--accent-blue);">過去台同期</button>
-    </div>
-    
-    <div class="table-wrap">
-        <table class="cmp-table">
-            <thead>
-                <tr>
-                    <th style="width: 25%;">指標</th>
-                    <th style="width: 25%;"><div class="col-header">本日全体</div><span id="label_col1" style="font-size:0.65rem; color:#aaa;">-</span></th>
-                    <th style="width: 25%;"><div class="col-header">選択区間</div><span id="label_col2" style="font-size:0.65rem; color:#aaa;">-</span></th>
-                    <th style="width: 25%;"><div class="col-header">過去同台</div><span id="label_col3" style="font-size:0.65rem; color:#aaa;">-</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td>打込玉数</td><td id="c1_balls">-</td><td id="c2_balls">-</td><td id="c3_balls">-</td></tr>
-                <tr><td>千円ナキ</td><td id="c1_naki">-</td><td id="c2_naki">-</td><td id="c3_naki">-</td></tr>
-                <tr><td>千円拾い</td><td id="c1_pick_k">-</td><td id="c2_pick_k">-</td><td id="c3_pick_k">-</td></tr>
-                <tr><td>拾球率</td><td id="c1_pick_r">-</td><td id="c2_pick_r">-</td><td id="c3_pick_r">-</td></tr>
-                <tr><td>SP発展率</td><td id="c1_sp_r">-</td><td id="c2_sp_r">-</td><td id="c3_sp_r">-</td></tr>
-                <tr><td>SP成功率</td><td id="c1_sp_v">-</td><td id="c2_sp_v">-</td><td id="c3_sp_v">-</td></tr>
-                <tr><td>役物確率</td><td id="c1_yaku">-</td><td id="c2_yaku">-</td><td id="c3_yaku">-</td></tr>
-                <tr><td>獲得R(大/中/小)</td><td id="c1_rounds">-</td><td id="c2_rounds">-</td><td id="c3_rounds">-</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <button id="btnSaveToSheet" class="btn-save" style="display:none;">💾 現在のデータをスプレッドシートに保存</button>
-</div>
-
-<div class="bottom-bar">
-    <div class="quick-controls">
-        <div style="display: flex; align-items: center; gap: 4px;">
-            <button id="btnRecentSub" class="badge-btn">-</button>
-            <span style="font-size: 0.8rem; font-weight: bold;">直近 <span id="spanN">20</span> ポチ</span>
-            <button id="btnRecentAdd" class="badge-btn">+</button>
-            <button id="btnApplyRecent" class="badge-btn" style="background: var(--accent-yellow); color:#000;">適用</button>
-        </div>
-        <div>
-            <button id="btnSelectAll" class="badge-btn">全選択</button>
-            <button id="btnClearSelect" class="badge-btn">解除</button>
-        </div>
-    </div>
-    <div id="pochiButtonContainer" class="pochi-scroll">
-        <span style="font-size: 0.75rem; color: #777; line-height: 32px;">スクショを追加するとボタンが並びます</span>
-    </div>
+    <div style="font-weight: bold; color: var(--accent-yellow);">【テスト3】GAS スプレッドシート保存テスト</div>
+    <button class="btn-test2" id="btnTestGas">③ スプレッドシート書込テスト実行</button>
+    <div id="logGas" class="log-box">（テスト未実行）</div>
 </div>
 
 <script>
-let snapshots = [];
-let selectedPochis = new Set();
-let pastRecords = [];
-let recentN = 20;
+const apiKeyInput = document.getElementById('apiKey');
+const gasUrlInput = document.getElementById('gasUrl');
+const logApi = document.getElementById('logApi');
+const logOcr = document.getElementById('logOcr');
+const logGas = document.getElementById('logGas');
 
-const inputDate = document.getElementById('inputDate');
-const inputShop = document.getElementById('inputShop');
-const inputMachine = document.getElementById('inputMachine');
-const inputRecorder = document.getElementById('inputRecorder');
-const apiKeyInput = document.getElementById('apiKeyInput');
-const gasUrlInput = document.getElementById('gasUrlInput');
-const fileInput = document.getElementById('fileInput');
-const statusDiv = document.getElementById('status');
-const btnSaveToSheet = document.getElementById('btnSaveToSheet');
-const pochiContainer = document.getElementById('pochiButtonContainer');
-const selectPastData = document.getElementById('selectPastData');
-
-inputDate.value = new Date().toISOString().split('T')[0];
+// ローカル保存
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
 gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
-inputShop.value = localStorage.getItem('odate_shop') || '';
-inputMachine.value = localStorage.getItem('odate_machine') || '';
-
 apiKeyInput.addEventListener('change', () => localStorage.setItem('odate_gemini_key', apiKeyInput.value.trim()));
 gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url', gasUrlInput.value.trim()));
-inputShop.addEventListener('change', () => localStorage.setItem('odate_shop', inputShop.value.trim()));
-inputMachine.addEventListener('change', () => localStorage.setItem('odate_machine', inputMachine.value.trim()));
 
-fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    const apiKey = apiKeyInput.value.trim();
-    if (!file) return;
-    if (!apiKey) {
-        alert('Gemini APIキーを入力してください');
-        return;
-    }
+let activeModelName = 'gemini-2.5-flash';
 
-    statusDiv.style.color = '#ff9f43';
-    statusDiv.innerText = '画像コントラスト補正＆Gemini解析中...';
+// --- テスト1：API接続 ＆ 利用可能モデルの探索 ---
+document.getElementById('btnTestApi').onclick = async () => {
+    const key = apiKeyInput.value.trim();
+    if (!key) { alert('APIキーを入力してください'); return; }
+    
+    logApi.innerHTML = '接続テスト中...\n';
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    let success = false;
 
-    const base64Data = await enhanceContrastAndGetBase64(file);
-
-    try {
-        const rawResult = await analyzeWithGemini(apiKey, base64Data);
-        addSnapshot(rawResult);
-        statusDiv.style.color = '#2ecc71';
-        statusDiv.innerText = `【${rawResult.invest}ポチ】解析完了！`;
-        btnSaveToSheet.style.display = 'block';
-    } catch (err) {
-        console.error(err);
-        statusDiv.style.color = '#e74c3c';
-        statusDiv.innerText = 'エラー: ' + err.message;
-    }
-    fileInput.value = '';
-});
-
-function enhanceContrastAndGetBase64(file) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.filter = 'contrast(130%) brightness(105%)';
-            ctx.drawImage(img, 0, 0);
-            const enhancedBase64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
-            resolve(enhancedBase64);
-        };
-        img.src = URL.createObjectURL(file);
-    });
-}
-
-async function analyzeWithGemini(apiKey, base64Image) {
-    // 優先して呼び出すモデル候補一覧（利用可能なものを順次試行）
-    const modelCandidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-
-    const prompt = `
-あなたはパチンコ羽根モノ（おだて豚）データカウンターのOCR専門AIです。
-画像全体を確認し、以下の指定ルールに従って13個の【白文字の大きな整数値】を正確に抽出してJSONで返してください。
-
-【重要抽出ルール】
-1. 「対象ゲーム数」の直後（右横）に表示されている整数のみを target_game として取得してください。
-2. ボタングリッド内の各ボタン中央にある「大きな白文字の整数」を取得してください。
-   ※ ボタン下部に小さく書かれている「1/22.66」のような確率表記（分数・小数）は絶対に無視してください。
-   ※ 「-」や未記録は必ず 0 としてください。
-   ※ 縦棒1本の「1」を背景やハイフンと見落とさないよう厳密に認識してください。
-   ※ 「SP」「SP→V」のボタンは薄いグレー背景に白文字です。見落とさず読み取ってください。
-   ※ 当大、当中、当小のいずれかに1以上の数字がある場合、V入賞は必ず1以上になります（論理整合性を確認してください）。
-
-【項目マッピング】
-- target_game: 「対象ゲーム数」の横の数字
-- invest: 1段目左端（お金・花マークの上）
-- naki2: 1段目左から2番目（「②」の上）
-- replay: 1段目左から3番目（「リプレイ」の上）
-- rep_v: 1段目右端（「リプ→V」の上）
-- pick: 2段目左端（「羽根拾」の上）
-- v_hit: 2段目左から2番目（「V入賞」の上）
-- sp: 2段目左から3番目（「SP」の上）
-- sp_v: 2段目右端（「SP→V」の上）
-- kick: 3段目左端（「拾い→蹴り」の上）
-- r10: 3段目左から2番目（「当大」の上）
-- r5: 3段目左から3番目（「当中」の上）
-- r3: 3段目右端（「当小」の上）
-
-必ず以下のJSON形式のみを出力してください:
-{
-  "target_game": 0, "invest": 0, "naki2": 0, "replay": 0, "rep_v": 0,
-  "pick": 0, "v_hit": 0, "sp": 0, "sp_v": 0, "kick": 0,
-  "r10": 0, "r5": 0, "r3": 0
-}
-`;
-
-    const requestBody = {
-        contents: [{
-            parts: [
-                { text: prompt },
-                { inline_data: { mime_type: "image/jpeg", data: base64Image } }
-            ]
-        }],
-        generationConfig: {
-            response_mime_type: "application/json"
-        }
-    };
-
-    let lastError = null;
-    for (const model of modelCandidates) {
+    for (const m of modelsToTry) {
+        logApi.innerHTML += `・モデル [${m}] を試行中... `;
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-            const response = await fetch(url, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
             });
-
-            if (response.ok) {
-                const resJson = await response.json();
-                return JSON.parse(resJson.candidates[0].content.parts[0].text);
+            const data = await res.json();
+            if (res.ok) {
+                logApi.innerHTML += `<span class="ok">【成功】</span>\n`;
+                activeModelName = m;
+                success = true;
+                logApi.innerHTML += `\n<span class="ok">👉 判定結果: このAPIキーでは [${m}] が正常稼働しています！</span>`;
+                break;
             } else {
-                const errJson = await response.json();
-                lastError = new Error(`${model}: ${errJson.error?.message || response.statusText}`);
+                logApi.innerHTML += `<span class="ng">【失敗: ${data.error?.message || res.statusText}】</span>\n`;
             }
         } catch (e) {
-            lastError = e;
+            logApi.innerHTML += `<span class="ng">【通信エラー: ${e.message}】</span>\n`;
         }
     }
 
-    throw lastError || new Error('Gemini APIの呼び出しに失敗しました');
-}
-
-function addSnapshot(data) {
-    const idx = snapshots.findIndex(s => s.invest === data.invest);
-    if (idx >= 0) {
-        snapshots[idx] = data;
-    } else {
-        snapshots.push(data);
+    if (!success) {
+        logApi.innerHTML += `\n<span class="ng">❌ すべてのモデルで失敗しました。APIキーが無効か、Google AI Studioの設定を確認してください。</span>`;
     }
-    snapshots.sort((a, b) => a.invest - b.invest);
-    
-    applyRecentN(recentN);
-    renderPochiButtons();
-    updateTable();
-}
+};
 
-function renderPochiButtons() {
-    pochiContainer.innerHTML = '';
-    snapshots.forEach(s => {
-        const btn = document.createElement('button');
-        btn.className = `pochi-btn ${selectedPochis.has(s.invest) ? 'active' : ''}`;
-        btn.innerText = `${s.invest}P`;
-        btn.onclick = () => {
-            if (selectedPochis.has(s.invest)) selectedPochis.delete(s.invest);
-            else selectedPochis.add(s.invest);
-            renderPochiButtons();
-            updateTable();
-        };
-        pochiContainer.appendChild(btn);
-    });
-}
+// --- テスト2：画像OCR ---
+document.getElementById('fileInput').onchange = async (e) => {
+    const file = e.target.files[0];
+    const key = apiKeyInput.value.trim();
+    if (!file || !key) return;
 
-document.getElementById('btnRecentSub').onclick = () => { if (recentN > 10) { recentN -= 10; document.getElementById('spanN').innerText = recentN; } };
-document.getElementById('btnRecentAdd').onclick = () => { recentN += 10; document.getElementById('spanN').innerText = recentN; };
-document.getElementById('btnApplyRecent').onclick = () => { applyRecentN(recentN); renderPochiButtons(); updateTable(); };
-document.getElementById('btnSelectAll').onclick = () => { snapshots.forEach(s => selectedPochis.add(s.invest)); renderPochiButtons(); updateTable(); };
-document.getElementById('btnClearSelect').onclick = () => { selectedPochis.clear(); renderPochiButtons(); updateTable(); };
+    logOcr.innerHTML = `画像解析中（使用モデル: ${activeModelName}）...\n`;
 
-function applyRecentN(n) {
-    selectedPochis.clear();
-    if (snapshots.length === 0) return;
-    const maxPochi = snapshots[snapshots.length - 1].invest;
-    const minTarget = Math.max(0, maxPochi - n);
-    snapshots.filter(s => s.invest > minTarget).forEach(s => selectedPochis.add(s.invest));
-}
-
-function calcMetrics(startSnap, endSnap) {
-    if (!endSnap) return null;
-    const start = startSnap || { target_game: 0, invest: 0, naki2: 0, replay: 0, rep_v: 0, pick: 0, v_hit: 0, sp: 0, sp_v: 0, kick: 0, r10: 0, r5: 0, r3: 0 };
-    
-    const diffInvest = endSnap.invest - start.invest;
-    const balls = diffInvest * 125;
-    const targetG = endSnap.target_game - start.target_game;
-    const totalNaki = targetG;
-    const totalPick = endSnap.pick - start.pick;
-    const totalV = endSnap.v_hit - start.v_hit;
-    const totalSp = endSnap.sp - start.sp;
-    const spV = endSnap.sp_v - start.sp_v;
-    const r10 = endSnap.r10 - start.r10;
-    const r5 = endSnap.r5 - start.r5;
-    const r3 = endSnap.r3 - start.r3;
-
-    const nakiPerK = balls > 0 ? (totalNaki / (balls / 250)).toFixed(2) : '-';
-    const pickPerK = balls > 0 ? (totalPick / (balls / 250)).toFixed(2) : '-';
-    const pickRate = totalNaki > 0 ? ((totalPick / totalNaki) * 100).toFixed(1) + '%' : '-';
-    const spRate = totalPick > 0 ? `1/${(totalPick / (totalSp || 1)).toFixed(1)}` : '-';
-    const spDecRate = totalSp > 0 ? `${((spV / totalSp) * 100).toFixed(1)}% (${spV}/${totalSp})` : '-';
-    const yakuProb = totalPick > 0 ? `1/${(totalPick / (totalV || 1)).toFixed(1)}` : '-';
-
-    return { balls, nakiPerK, pickPerK, pickRate, spRate, spDecRate, yakuProb, rounds: `${r10}/${r5}/${r3}` };
-}
-
-function updateTable() {
-    if (snapshots.length === 0) return;
-
-    const latest = snapshots[snapshots.length - 1];
-    const m1 = calcMetrics(null, latest);
-    document.getElementById('label_col1').innerText = `0〜${latest.invest}P (${latest.invest * 125}玉)`;
-    fillColumn('c1', m1);
-
-    if (selectedPochis.size > 0) {
-        const sortedSel = Array.from(selectedPochis).sort((a,b)=>a-b);
-        const minP = sortedSel[0];
-        const maxP = sortedSel[sortedSel.length - 1];
-        const endSnap = snapshots.find(s => s.invest === maxP);
-        const startIdx = snapshots.findIndex(s => s.invest === minP);
-        const startSnap = startIdx > 0 ? snapshots[startIdx - 1] : null;
-
-        const m2 = calcMetrics(startSnap, endSnap);
-        document.getElementById('label_col2').innerText = `${startSnap ? startSnap.invest : 0}〜${maxP}P (${m2.balls}玉)`;
-        fillColumn('c2', m2);
-    } else {
-        document.getElementById('label_col2').innerText = '-';
-        fillColumn('c2', null);
-    }
-
-    updatePastColumn();
-}
-
-function fillColumn(prefix, m) {
-    document.getElementById(`${prefix}_balls`).innerText = m ? m.balls.toLocaleString() + '玉' : '-';
-    document.getElementById(`${prefix}_naki`).innerText = m ? m.nakiPerK + ' 回' : '-';
-    document.getElementById(`${prefix}_pick_k`).innerText = m ? m.pickPerK + ' 個' : '-';
-    document.getElementById(`${prefix}_pick_r`).innerText = m ? m.pickRate : '-';
-    document.getElementById(`${prefix}_sp_r`).innerText = m ? m.spRate : '-';
-    document.getElementById(`${prefix}_sp_v`).innerText = m ? m.spDecRate : '-';
-    document.getElementById(`${prefix}_yaku`).innerText = m ? m.yakuProb : '-';
-    document.getElementById(`${prefix}_rounds`).innerText = m ? m.rounds : '-';
-}
-
-btnSaveToSheet.onclick = async () => {
-    const gasUrl = gasUrlInput.value.trim();
-    if (!gasUrl) { alert('GAS WebApp URLを入力してください'); return; }
-    if (snapshots.length === 0) return;
-
-    const latest = snapshots[snapshots.length - 1];
-    const payload = {
-        date: inputDate.value,
-        shop: inputShop.value.trim(),
-        machine_number: inputMachine.value.trim(),
-        recorder: inputRecorder.value,
-        pochi: latest.invest,
-        ...latest
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const base64Data = reader.result.split(',')[1];
+        const prompt = `
+以下のパチンコカウンター画像から、中央に書かれた大きな整数の数字のみを抽出しJSONで返してください。
+- target_game: 「対象ゲーム数」の横の数字
+- invest: 1段目左端（お金マーク）
+- naki2: 1段目左から2番目（「②」）
+- replay: 1段目左から3番目（「リプレイ」）
+- rep_v: 1段目右端（「リプ→V」）
+- pick: 2段目左端（「羽根拾」）
+- v_hit: 2段目左から2番目（「V入賞」）
+- sp: 2段目左から3番目（「SP」）
+- sp_v: 2段目右端（「SP→V」）
+- kick: 3段目左端（「拾い→蹴り」）
+- r10: 3段目左から2番目（「当大」）
+- r5: 3段目左から3番目（「当中」）
+- r3: 3段目右端（「当小」）
+※ハイフン「-」は 0。
+`;
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModelName}:generateContent?key=${key}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64Data } }] }],
+                    generationConfig: { response_mime_type: "application/json" }
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                const text = data.candidates[0].content.parts[0].text;
+                logOcr.innerHTML = `<span class="ok">【OCR抽出成功！】</span>\n` + JSON.stringify(JSON.parse(text), null, 2);
+            } else {
+                logOcr.innerHTML = `<span class="ng">【OCRエラー】</span>\n` + JSON.stringify(data, null, 2);
+            }
+        } catch (err) {
+            logOcr.innerHTML = `<span class="ng">【通信エラー】</span> ` + err.message;
+        }
     };
+    reader.readAsDataURL(file);
+};
 
-    statusDiv.style.color = '#ff9f43';
-    statusDiv.innerText = 'スプレッドシートへ保存中...';
+// --- テスト3：GAS保存 ---
+document.getElementById('btnTestGas').onclick = async () => {
+    const url = gasUrlInput.value.trim();
+    if (!url) { alert('GAS URLを入力してください'); return; }
 
+    logGas.innerHTML = 'スプレッドシートへテストデータ送信中...\n';
     try {
-        await fetch(gasUrl, {
+        await fetch(url, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                date: "2026-09-02",
+                shop: "テスト店",
+                machine_number: "99",
+                recorder: "テスト",
+                pochi: 10,
+                target_game: 72,
+                memo: "疎通テスト成功"
+            })
         });
-        statusDiv.style.color = '#2ecc71';
-        statusDiv.innerText = `【${latest.invest}ポチ】スプレッドシートに保存しました！`;
+        logGas.innerHTML = `<span class="ok">【送信完了】</span>\nスプレッドシートを開いて、新しい行に「テスト店 / 99番台」が書き込まれているか確認してください！`;
     } catch (e) {
-        statusDiv.style.color = '#e74c3c';
-        statusDiv.innerText = '保存エラー: ' + e.message;
+        logGas.innerHTML = `<span class="ng">【送信エラー】</span> ` + e.message;
     }
 };
-
-document.getElementById('btnFetchPast').onclick = async () => {
-    const gasUrl = gasUrlInput.value.trim();
-    const curShop = inputShop.value.trim();
-    const curMachine = inputMachine.value.trim();
-    if (!gasUrl) { alert('GAS WebApp URLを入力してください'); return; }
-
-    statusDiv.style.color = '#ff9f43';
-    statusDiv.innerText = '過去データ取得中...';
-
-    try {
-        const res = await fetch(gasUrl);
-        const list = await res.json();
-        pastRecords = list.filter(r => String(r['店舗名']) === curShop && String(r['台番号']) === curMachine);
-        
-        selectPastData.innerHTML = '<option value="">選択してください</option>';
-        pastRecords.forEach((r, idx) => {
-            const opt = document.createElement('option');
-            opt.value = idx;
-            opt.innerText = `${r['日付']} (${r['ポチ数']}P / ${r['記録者']})`;
-            selectPastData.appendChild(opt);
-        });
-
-        statusDiv.style.color = '#2ecc71';
-        statusDiv.innerText = `同台の過去データ ${pastRecords.length}件 を取得しました`;
-    } catch (e) {
-        statusDiv.style.color = '#e74c3c';
-        statusDiv.innerText = '過去データ取得失敗: ' + e.message;
-    }
-};
-
-selectPastData.onchange = () => updatePastColumn();
-
-function updatePastColumn() {
-    const idx = selectPastData.value;
-    if (idx === '' || !pastRecords[idx]) {
-        document.getElementById('label_col3').innerText = '-';
-        fillColumn('c3', null);
-        return;
-    }
-    const r = pastRecords[idx];
-    const m3 = calcMetrics(null, {
-        invest: Number(r['ポチ数'] || r['投資']),
-        target_game: Number(r['対象G']),
-        pick: Number(r['羽根拾']),
-        v_hit: Number(r['V入賞']),
-        sp: Number(r['SP']),
-        sp_v: Number(r['SPV']),
-        r10: Number(r['当大']),
-        r5: Number(r['当中']),
-        r3: Number(r['当小'])
-    });
-    document.getElementById('label_col3').innerText = `${r['日付']} (${r['ポチ数']}P)`;
-    fillColumn('c3', m3);
-}
 </script>
 
 </body>
