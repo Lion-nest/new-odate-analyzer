@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v1.4</title>
+    <title>おだて豚 解析ダッシュボード v1.5</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -18,57 +18,69 @@
             --text-sub: #8f8f9d;
         }
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 10px; padding-bottom: 120px; font-size: 13px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 8px; padding-bottom: 95px; font-size: 13px; }
         
-        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        h1 { font-size: 1.05rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 6px; }
-        .version-badge { background: #e67e22; color: #fff; font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; }
-        .btn-gear { background: #2c2c3d; border: 1px solid var(--border-color); color: #ccc; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        h1 { font-size: 1rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 6px; }
+        .version-badge { background: #e67e22; color: #fff; font-size: 0.68rem; padding: 2px 5px; border-radius: 4px; }
+        .btn-gear { background: #2c2c3d; border: 1px solid var(--border-color); color: #ccc; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
 
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; margin-bottom: 6px; }
         
-        /* 入力グリッド（高さ・ズレ防止） */
-        .grid-3 { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; gap: 6px; }
+        /* 入力グリッド（Safariのdate崩れ完全対策） */
+        .grid-3 { display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 6px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        label { font-size: 0.7rem; color: var(--text-sub); display: block; margin-bottom: 2px; }
-        input, select { width: 100%; height: 32px; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 5px; color: #fff; font-size: 0.8rem; }
+        label { font-size: 0.68rem; color: var(--text-sub); display: block; margin-bottom: 2px; }
+        input, select {
+            width: 100%;
+            height: 32px;
+            padding: 2px 6px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 0.8rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
 
         /* スクショ取込 ＆ 数値プレビューエリア */
-        .upload-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; align-items: stretch; }
-        .file-box { display: flex; flex-direction: column; justify-content: center; background: var(--bg-input); border: 1px dashed #555; border-radius: 6px; padding: 6px; text-align: center; }
+        .upload-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: stretch; }
+        .file-box { display: flex; flex-direction: column; justify-content: center; background: var(--bg-input); border: 1px dashed #555; border-radius: 6px; padding: 4px; text-align: center; }
         .file-box input[type="file"] { display: none; }
-        .btn-upload { background: #3a3a4c; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 6px 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .btn-upload { background: #3a3a4c; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 6px 4px; font-size: 0.72rem; font-weight: bold; cursor: pointer; }
         
-        .preview-box { background: #111116; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 8px; font-size: 0.72rem; line-height: 1.35; font-family: ui-monospace, monospace; position: relative; }
-        .preview-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a38; padding-bottom: 3px; margin-bottom: 4px; font-weight: bold; color: var(--accent-yellow); font-family: sans-serif; }
+        .preview-box { background: #111116; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 6px; font-size: 0.7rem; line-height: 1.35; font-family: ui-monospace, monospace; position: relative; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a38; padding-bottom: 2px; margin-bottom: 3px; font-weight: bold; color: var(--accent-yellow); font-family: sans-serif; }
         .btn-edit { background: #34495e; color: #fff; border: 1px solid #5d6d7e; border-radius: 3px; font-size: 0.65rem; padding: 1px 6px; cursor: pointer; }
         .preview-lines div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
         .preview-lines span { color: #fff; font-weight: bold; }
 
         /* 比較テーブル */
-        .table-wrap { overflow-x: auto; margin-top: 6px; }
-        table.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; text-align: center; }
-        table.cmp-table th, table.cmp-table td { border: 1px solid var(--border-color); padding: 5px 3px; }
+        .table-wrap { overflow-x: auto; margin-top: 4px; }
+        table.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
+        table.cmp-table th, table.cmp-table td { border: 1px solid var(--border-color); padding: 3px 2px; }
         table.cmp-table th { background: #262633; color: #bbb; font-weight: normal; }
-        .sec-hdr { background: #1a1a24; color: var(--accent-yellow); font-weight: bold; text-align: left; padding-left: 6px; }
+        .sec-hdr { background: #1a1a24; color: var(--accent-yellow); font-weight: bold; text-align: left; padding-left: 4px; font-size: 0.7rem; }
         .val-plus { color: var(--accent-red); font-weight: bold; }
         .val-minus { color: var(--accent-blue); font-weight: bold; }
 
         button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
-        .btn-save { background: var(--accent-green); color: #000; width: 100%; padding: 10px; margin-top: 8px; font-size: 0.95rem; }
+        .btn-save { background: var(--accent-green); color: #000; width: 100%; padding: 8px; margin-top: 6px; font-size: 0.9rem; }
 
         /* 下部固定ポチバー */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 6px 10px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
-        .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-        .pochi-scroll { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 4px; }
-        .pochi-btn { flex: 0 0 auto; background: #2c2c3d; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 5px 10px; font-size: 0.8rem; font-weight: bold; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 5px 8px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
+        .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+        .pochi-scroll { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+        .pochi-btn { flex: 0 0 auto; background: #2c2c3d; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; }
         .pochi-btn.active { background: var(--accent-yellow); color: #000; border-color: #f39c12; }
-        .badge-btn { background: #3a3a4c; color: #fff; font-size: 0.7rem; padding: 3px 6px; border-radius: 4px; }
+        .badge-btn { background: #3a3a4c; color: #fff; font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; }
 
         /* 設定・修正モーダル */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 200; display: none; overflow-y: auto; padding: 12px; }
-        .modal-content { background: var(--bg-card); border: 1px solid #444; border-radius: 8px; padding: 14px; max-width: 500px; margin: auto; }
-        .modal-title { font-size: 1rem; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .modal-content { background: var(--bg-card); border: 1px solid #444; border-radius: 8px; padding: 12px; max-width: 500px; margin: auto; }
+        .modal-title { font-size: 0.95rem; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; }
         .grid-edit-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; }
         .edit-input-wrap label { font-size: 0.65rem; color: #aaa; margin-bottom: 1px; }
         .edit-input-wrap input { height: 28px; font-size: 0.85rem; text-align: center; }
@@ -77,7 +89,7 @@
 <body>
 
 <div class="header-bar">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.4</span></h1>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.5</span></h1>
     <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
 </div>
 
@@ -121,7 +133,7 @@
         <div class="file-box">
             <input type="file" id="fileInput" accept="image/*">
             <button class="btn-upload" onclick="document.getElementById('fileInput').click()">ファイルを選択</button>
-            <div id="statusText" style="font-size:0.65rem; color:#aaa; margin-top:4px;">未選択</div>
+            <div id="statusText" style="font-size:0.65rem; color:#aaa; margin-top:3px;">未選択</div>
         </div>
         <div class="preview-box">
             <div class="preview-header">
@@ -140,8 +152,8 @@
 
 <!-- マルチ列比較テーブル -->
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-        <span style="font-weight: bold;">📊 リアルタイム分析</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+        <span style="font-weight: bold; font-size: 0.8rem;">📊 リアルタイム分析</span>
         <button id="btnFetchPast" class="badge-btn" style="background: var(--accent-blue);">過去台同期</button>
     </div>
     
@@ -176,9 +188,9 @@
                 <tr><td colspan="4" class="sec-hdr">【ヒキ】</td></tr>
                 <tr><td>ヒキ総多寡</td><td id="c1_hiki_total">-</td><td id="c2_hiki_total">-</td><td id="c3_hiki_total">-</td></tr>
                 <tr><td>Rのヒキ</td><td id="c1_hiki_r">-</td><td id="c2_hiki_r">-</td><td id="c3_hiki_r">-</td></tr>
-                <tr><td>SPルートのヒキ</td><td id="c1_hiki_sp">-</td><td id="c2_hiki_sp">-</td><td id="c3_hiki_sp">-</td></tr>
-                <tr><td>通常-リプのヒキ</td><td id="c1_hiki_rep">-</td><td id="c2_hiki_rep">-</td><td id="c3_hiki_rep">-</td></tr>
-                <tr><td>通常ルートのヒキ</td><td id="c1_hiki_norm">-</td><td id="c2_hiki_norm">-</td><td id="c3_hiki_norm">-</td></tr>
+                <tr><td>SPルート</td><td id="c1_hiki_sp">-</td><td id="c2_hiki_sp">-</td><td id="c3_hiki_sp">-</td></tr>
+                <tr><td>通常-リプ</td><td id="c1_hiki_rep">-</td><td id="c2_hiki_rep">-</td><td id="c3_hiki_rep">-</td></tr>
+                <tr><td>通常ルート</td><td id="c1_hiki_norm">-</td><td id="c2_hiki_norm">-</td><td id="c3_hiki_norm">-</td></tr>
             </tbody>
         </table>
     </div>
@@ -201,7 +213,7 @@
         </div>
     </div>
     <div id="pochiButtonContainer" class="pochi-scroll">
-        <span style="font-size: 0.7rem; color: #777; line-height: 28px;">スクショ追加でポチボタンが並びます</span>
+        <span style="font-size: 0.7rem; color: #777; line-height: 26px;">スクショ追加でポチボタンが並びます</span>
     </div>
 </div>
 
@@ -261,7 +273,6 @@ let selectedPochis = new Set();
 let pastRecords = [];
 let recentN = 20;
 let lastUploadedBase64 = null;
-let editingInvest = null;
 
 // 要素
 const inputDate = document.getElementById('inputDate');
@@ -292,7 +303,7 @@ gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url
 inputShop.addEventListener('change', () => localStorage.setItem('odate_shop', inputShop.value.trim()));
 inputMachine.addEventListener('change', () => localStorage.setItem('odate_machine', inputMachine.value.trim()));
 
-// --- 画像最適化＆リトライ付きOCR ---
+// 画像処理＆OCR
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     const apiKey = apiKeyInput.value.trim();
@@ -314,7 +325,7 @@ fileInput.addEventListener('change', async (e) => {
         addSnapshot(rawResult);
         updatePreviewBox(rawResult);
         statusText.style.color = '#2ecc71';
-        statusText.innerText = `【${rawResult.invest}P】保存完了！`;
+        statusText.innerText = `【${rawResult.invest}P】完了！`;
         btnSaveToSheet.style.display = 'block';
     } catch (err) {
         console.error(err);
@@ -383,7 +394,6 @@ async function analyzeWithGemini(apiKey, base64Image) {
     throw new Error('混雑のため解析に失敗しました。再試行してください');
 }
 
-// プレビュー表示更新
 function updatePreviewBox(data) {
     prevPochiLabel.innerText = `【${data.invest}P】読取数値`;
     btnOpenEdit.style.display = 'inline-block';
@@ -395,11 +405,9 @@ function updatePreviewBox(data) {
     `;
 }
 
-// 修正モーダル
 btnOpenEdit.onclick = () => {
     if (snapshots.length === 0) return;
     const latest = snapshots[snapshots.length - 1];
-    editingInvest = latest.invest;
 
     document.getElementById('ed_target_game').value = latest.target_game;
     document.getElementById('ed_invest').value = latest.invest;
@@ -484,7 +492,6 @@ function applyRecentN(n) {
     snapshots.filter(s => s.invest > minTarget).forEach(s => selectedPochis.add(s.invest));
 }
 
-// 指標計算
 function calcMetrics(startSnap, endSnap) {
     if (!endSnap) return null;
     const start = startSnap || { target_game: 0, invest: 0, naki2: 0, replay: 0, rep_v: 0, pick: 0, v_hit: 0, sp: 0, sp_v: 0, kick: 0, r10: 0, r5: 0, r3: 0 };
@@ -517,7 +524,6 @@ function calcMetrics(startSnap, endSnap) {
     const spSuccess = totalSp > 0 ? ((spV / totalSp) * 100).toFixed(1) + ' %' : '-';
     const repSuccess = replay > 0 ? ((rep_v / replay) * 100).toFixed(1) + ' %' : '-';
 
-    // 理論値ベースのヒキ計算
     const expR = totalV * 5.666;
     const hikiR = totalV > 0 ? Math.round(((r10 * 10 + r5 * 5 + r3 * 3) - expR) * 125) : 0;
     const hikiSp = Math.round((spV - (totalSp * (1/3))) * 700);
@@ -526,7 +532,7 @@ function calcMetrics(startSnap, endSnap) {
     const hikiTotal = hikiR + hikiSp + hikiRep + hikiNorm;
 
     return {
-        balls: `${diffInvest}P (${balls.toLocaleString()}玉)`,
+        balls: `${diffInvest}ポチ`,
         totalNaki: `${totalNaki} 回`,
         naki2Prob,
         totalV: `${totalV} 回`,
@@ -549,9 +555,9 @@ function calcMetrics(startSnap, endSnap) {
 }
 
 function formatHiki(val) {
-    if (val > 0) return `<span class="val-plus">+${val.toLocaleString()} 玉</span>`;
-    if (val < 0) return `<span class="val-minus">${val.toLocaleString()} 玉</span>`;
-    return '0 玉';
+    if (val > 0) return `<span class="val-plus">+${val.toLocaleString()}玉</span>`;
+    if (val < 0) return `<span class="val-minus">${val.toLocaleString()}玉</span>`;
+    return '0玉';
 }
 
 function updateTable() {
@@ -603,7 +609,6 @@ function fillColumn(prefix, m) {
     document.getElementById(`${prefix}_hiki_norm`).innerHTML = m ? m.hikiNorm : '-';
 }
 
-// スプレッドシート保存
 btnSaveToSheet.onclick = async () => {
     const gasUrl = gasUrlInput.value.trim();
     if (!gasUrl) { alert('設定からGAS WebApp URLを入力してください'); return; }
