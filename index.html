@@ -3,61 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v1.2</title>
+    <title>おだて豚 解析ダッシュボード v1.3</title>
     <style>
         :root {
-            --bg-main: #141419;
-            --bg-card: #1f1f28;
-            --bg-input: #121216;
-            --border-color: #333344;
+            --bg-main: #121216;
+            --bg-card: #1b1b22;
+            --bg-input: #0f0f13;
+            --border-color: #2e2e3d;
             --accent-green: #2ecc71;
             --accent-blue: #3498db;
             --accent-yellow: #f1c40f;
-            --text-main: #f0f0f0;
-            --text-sub: #8f8f9d;
+            --accent-red: #e74c3c;
+            --text-main: #e0e0e0;
+            --text-sub: #888899;
         }
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 12px; padding-bottom: 120px; font-size: 14px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 8px; padding-bottom: 95px; font-size: 11px; }
         
-        .header-wrap { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        h1 { font-size: 1.1rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 6px; }
-        .version-badge { background: #e67e22; color: #fff; font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; }
-        .btn-settings-toggle { background: #2c2c3d; border: 1px solid var(--border-color); color: #fff; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+        .header-wrap { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        h1 { font-size: 0.95rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 4px; }
+        .version-badge { background: #e67e22; color: #fff; font-size: 0.65rem; padding: 1px 4px; border-radius: 3px; }
+        .btn-settings-toggle { background: #262636; border: 1px solid var(--border-color); color: #ccc; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
         
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        label { font-size: 0.75rem; color: var(--text-sub); display: block; margin-bottom: 3px; }
-        input, select { width: 100%; padding: 8px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 0.9rem; }
-        button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; }
-        .btn-save { background: var(--accent-green); color: #000; width: 100%; margin-top: 8px; font-size: 1rem; }
-        #status { text-align: center; font-size: 0.8rem; margin-top: 6px; min-height: 1.2em; font-weight: bold; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        label { font-size: 0.65rem; color: var(--text-sub); display: block; margin-bottom: 1px; }
+        input, select { width: 100%; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 4px; color: #fff; font-size: 0.8rem; }
+        button { cursor: pointer; border: none; border-radius: 4px; padding: 4px 8px; font-weight: bold; }
+        .btn-save { background: var(--accent-green); color: #000; width: 100%; margin-top: 6px; font-size: 0.85rem; padding: 6px; }
+        #status { text-align: center; font-size: 0.75rem; margin-top: 4px; min-height: 1.1em; font-weight: bold; }
         
-        /* 比較テーブル */
-        .table-wrap { overflow-x: auto; margin-top: 8px; }
-        table.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; }
-        table.cmp-table th, table.cmp-table td { border: 1px solid var(--border-color); padding: 6px 4px; }
-        table.cmp-table th { background: #262633; color: #bbb; }
-        .col-header { font-size: 0.75rem; font-weight: bold; }
+        /* 1枚画面に収める超コンパクト比較テーブル */
+        .table-wrap { overflow-x: auto; margin-top: 4px; }
+        table.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
+        table.cmp-table th, table.cmp-table td { border: 1px solid var(--border-color); padding: 2px 2px; line-height: 1.25; }
+        table.cmp-table th { background: #222230; color: #bbb; font-weight: normal; }
+        .sec-head { background: #161620; color: var(--accent-yellow); font-weight: bold; text-align: left; padding-left: 4px !important; font-size: 0.7rem; }
+        .col-header { font-size: 0.75rem; font-weight: bold; color: #fff; }
+        
+        /* ヒキのプラス・マイナスカラー */
+        .val-plus { color: #ff6b6b; font-weight: bold; }
+        .val-minus { color: #54a0ff; font-weight: bold; }
+        .val-total-hiki { font-weight: bold; font-size: 0.85rem; }
 
         /* 下部固定ポチバー */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 8px 12px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
-        .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-        .pochi-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-        .pochi-btn { flex: 0 0 auto; background: #2c2c3d; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 6px 12px; font-size: 0.85rem; font-weight: bold; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #15151e; border-top: 1px solid var(--border-color); padding: 5px 8px; z-index: 100; box-shadow: 0 -3px 8px rgba(0,0,0,0.6); }
+        .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .pochi-scroll { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+        .pochi-btn { flex: 0 0 auto; background: #262636; color: #aaa; border: 1px solid #3d3d52; border-radius: 3px; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; }
         .pochi-btn.active { background: var(--accent-yellow); color: #000; border-color: #f39c12; }
-        .badge-btn { background: #3a3a4c; color: #fff; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; }
+        .badge-btn { background: #323246; color: #fff; font-size: 0.7rem; padding: 3px 6px; border-radius: 3px; }
 
-        /* 設定用モーダル */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+        /* 設定モーダル */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; padding: 12px; }
         .modal.open { display: flex; }
-        .modal-content { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; width: 100%; max-width: 450px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+        .modal-content { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; width: 100%; max-width: 400px; padding: 14px; }
     </style>
 </head>
 <body>
 
 <div class="header-wrap">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.2</span></h1>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.3</span></h1>
     <button class="btn-settings-toggle" id="btnOpenSettings">⚙️ 設定</button>
 </div>
 
@@ -77,7 +84,7 @@
             <input type="text" id="inputMachine" placeholder="21">
         </div>
     </div>
-    <div class="grid-2" style="margin-top: 6px;">
+    <div class="grid-2" style="margin-top: 4px;">
         <div>
             <label>記録者</label>
             <select id="inputRecorder">
@@ -94,17 +101,19 @@
     </div>
 </div>
 
-<!-- スクショ取込カード（API入力欄は隠してスッキリ化） -->
-<div class="card">
-    <label>📷 スクリーンショット追加 (10ポチ刻み)</label>
-    <input type="file" id="fileInput" accept="image/*">
-    <div id="status">準備完了</div>
+<!-- スクショ取込カード -->
+<div class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+    <div style="flex: 1;">
+        <label>📷 スクショ追加 (10P刻み)</label>
+        <input type="file" id="fileInput" accept="image/*" style="padding: 3px;">
+    </div>
+    <div id="status" style="flex: 1; font-size: 0.75rem;">準備完了</div>
 </div>
 
-<!-- マルチ列比較テーブル -->
+<!-- マルチ列比較テーブル（全18項目） -->
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-weight: bold;">📊 リアルタイム分析</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+        <span style="font-weight: bold; font-size: 0.8rem;">📊 リアルタイム分析</span>
         <button id="btnFetchPast" class="badge-btn" style="background: var(--accent-blue);">過去台同期</button>
     </div>
     
@@ -112,26 +121,53 @@
         <table class="cmp-table">
             <thead>
                 <tr>
-                    <th style="width: 25%;">指標</th>
-                    <th style="width: 25%;"><div class="col-header">本日全体</div><span id="label_col1" style="font-size:0.65rem; color:#aaa;">-</span></th>
-                    <th style="width: 25%;"><div class="col-header">選択区間</div><span id="label_col2" style="font-size:0.65rem; color:#aaa;">-</span></th>
-                    <th style="width: 25%;"><div class="col-header">過去同台</div><span id="label_col3" style="font-size:0.65rem; color:#aaa;">-</span></th>
+                    <th style="width: 31%;">指標</th>
+                    <th style="width: 23%;"><div class="col-header">本日全体</div></th>
+                    <th style="width: 23%;"><div class="col-header">選択区間</div></th>
+                    <th style="width: 23%;"><div class="col-header">過去同台</div></th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td>打込玉数</td><td id="c1_balls">-</td><td id="c2_balls">-</td><td id="c3_balls">-</td></tr>
-                <tr><td>千円ナキ</td><td id="c1_naki">-</td><td id="c2_naki">-</td><td id="c3_naki">-</td></tr>
-                <tr><td>千円拾い</td><td id="c1_pick_k">-</td><td id="c2_pick_k">-</td><td id="c3_pick_k">-</td></tr>
+                <!-- 打込玉数 -->
+                <tr style="background:#20202e; font-weight:bold;">
+                    <td>打込玉数</td>
+                    <td id="c1_balls">-</td><td id="c2_balls">-</td><td id="c3_balls">-</td>
+                </tr>
+
+                <!-- 【現状】 -->
+                <tr><td colspan="4" class="sec-head">【現状】</td></tr>
+                <tr><td>総ナキ数</td><td id="c1_total_naki">-</td><td id="c2_total_naki">-</td><td id="c3_total_naki">-</td></tr>
+                <tr><td>2穴開放確率</td><td id="c1_naki2_prob">-</td><td id="c2_naki2_prob">-</td><td id="c3_naki2_prob">-</td></tr>
+                <tr><td>大当り回数</td><td id="c1_hit_cnt">-</td><td id="c2_hit_cnt">-</td><td id="c3_hit_cnt">-</td></tr>
+                <tr><td>大当り平均R</td><td id="c1_avg_r">-</td><td id="c2_avg_r">-</td><td id="c3_avg_r">-</td></tr>
+
+                <!-- 【統計】 -->
+                <tr><td colspan="4" class="sec-head">【統計】</td></tr>
+                <tr><td>ナキ/千</td><td id="c1_naki_k">-</td><td id="c2_naki_k">-</td><td id="c3_naki_k">-</td></tr>
+                <tr><td>拾い/千</td><td id="c1_pick_k">-</td><td id="c2_pick_k">-</td><td id="c3_pick_k">-</td></tr>
                 <tr><td>拾球率</td><td id="c1_pick_r">-</td><td id="c2_pick_r">-</td><td id="c3_pick_r">-</td></tr>
+                <tr><td>大当り確率</td><td id="c1_hit_prob">-</td><td id="c2_hit_prob">-</td><td id="c3_hit_prob">-</td></tr>
+                <tr><td>役物確率</td><td id="c1_yaku_prob">-</td><td id="c2_yaku_prob">-</td><td id="c3_yaku_prob">-</td></tr>
+
+                <!-- 【役物】 -->
+                <tr><td colspan="4" class="sec-head">【役物】</td></tr>
+                <tr><td>蹴り率</td><td id="c1_kick_r">-</td><td id="c2_kick_r">-</td><td id="c3_kick_r">-</td></tr>
                 <tr><td>SP発展率</td><td id="c1_sp_r">-</td><td id="c2_sp_r">-</td><td id="c3_sp_r">-</td></tr>
                 <tr><td>SP成功率</td><td id="c1_sp_v">-</td><td id="c2_sp_v">-</td><td id="c3_sp_v">-</td></tr>
-                <tr><td>役物確率</td><td id="c1_yaku">-</td><td id="c2_yaku">-</td><td id="c3_yaku">-</td></tr>
-                <tr><td>獲得R(大/中/小)</td><td id="c1_rounds">-</td><td id="c2_rounds">-</td><td id="c3_rounds">-</td></tr>
+                <tr><td>リプレイ成功率</td><td id="c1_rep_v">-</td><td id="c2_rep_v">-</td><td id="c3_rep_v">-</td></tr>
+
+                <!-- 【ヒキ】 -->
+                <tr><td colspan="4" class="sec-head">【ヒキ】</td></tr>
+                <tr style="background:#241d24;"><td>ヒキ総多寡</td><td id="c1_total_hiki">-</td><td id="c2_total_hiki">-</td><td id="c3_total_hiki">-</td></tr>
+                <tr><td>Rのヒキ</td><td id="c1_hiki_r">-</td><td id="c2_hiki_r">-</td><td id="c3_hiki_r">-</td></tr>
+                <tr><td>SPルートのヒキ</td><td id="c1_hiki_sp">-</td><td id="c2_hiki_sp">-</td><td id="c3_hiki_sp">-</td></tr>
+                <tr><td>通常-ﾘﾌﾟのヒキ</td><td id="c1_hiki_rep">-</td><td id="c2_hiki_rep">-</td><td id="c3_hiki_rep">-</td></tr>
+                <tr><td>通常ルートのヒキ</td><td id="c1_hiki_norm">-</td><td id="c2_hiki_norm">-</td><td id="c3_hiki_norm">-</td></tr>
             </tbody>
         </table>
     </div>
 
-    <button id="btnSaveToSheet" class="btn-save" style="display:none;">💾 現在のデータをスプレッドシートに保存</button>
+    <button id="btnSaveToSheet" class="btn-save" style="display:none;">💾 スプレッドシートに保存</button>
 </div>
 
 <!-- 下部固定：ポチボタン＆区間セレクター -->
@@ -139,7 +175,7 @@
     <div class="quick-controls">
         <div style="display: flex; align-items: center; gap: 4px;">
             <button id="btnRecentSub" class="badge-btn">-</button>
-            <span style="font-size: 0.8rem; font-weight: bold;">直近 <span id="spanN">20</span> ポチ</span>
+            <span style="font-size: 0.75rem; font-weight: bold;">直近 <span id="spanN">20</span>P</span>
             <button id="btnRecentAdd" class="badge-btn">+</button>
             <button id="btnApplyRecent" class="badge-btn" style="background: var(--accent-yellow); color:#000;">適用</button>
         </div>
@@ -149,21 +185,21 @@
         </div>
     </div>
     <div id="pochiButtonContainer" class="pochi-scroll">
-        <span style="font-size: 0.75rem; color: #777; line-height: 32px;">スクショを追加するとボタンが並びます</span>
+        <span style="font-size: 0.7rem; color: #777; line-height: 24px;">スクショを追加するとボタンが並びます</span>
     </div>
 </div>
 
-<!-- 設定モーダル（普段は隠れている） -->
+<!-- 設定モーダル -->
 <div id="settingsModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; font-size:1rem; border-bottom:1px solid var(--border-color); padding-bottom:8px;">⚙️ API & システム設定</h3>
-        <label>Gemini APIキー (Free Tier)</label>
+        <h3 style="margin-top:0; font-size:0.9rem; border-bottom:1px solid var(--border-color); padding-bottom:6px;">⚙️ API & システム設定</h3>
+        <label>Gemini APIキー (Free Tier: 260902hane)</label>
         <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
 
-        <label style="margin-top:8px;">GAS WebApp URL</label>
+        <label style="margin-top:6px;">GAS WebApp URL</label>
         <input type="text" id="gasUrlInput" placeholder="https://script.google.com/...">
 
-        <button id="btnCloseSettings" style="background:var(--accent-blue); color:#fff; width:100%; margin-top:14px;">設定を保存して閉じる</button>
+        <button id="btnCloseSettings" style="background:var(--accent-blue); color:#fff; width:100%; margin-top:12px;">設定を保存して閉じる</button>
     </div>
 </div>
 
@@ -186,7 +222,7 @@ const btnSaveToSheet = document.getElementById('btnSaveToSheet');
 const pochiContainer = document.getElementById('pochiButtonContainer');
 const selectPastData = document.getElementById('selectPastData');
 
-// モーダル関連
+// モーダル
 const settingsModal = document.getElementById('settingsModal');
 document.getElementById('btnOpenSettings').onclick = () => settingsModal.classList.add('open');
 document.getElementById('btnCloseSettings').onclick = () => {
@@ -195,7 +231,7 @@ document.getElementById('btnCloseSettings').onclick = () => {
     settingsModal.classList.remove('open');
 };
 
-// 初期値ロード
+// 初期値
 inputDate.value = new Date().toISOString().split('T')[0];
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
 gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
@@ -205,7 +241,7 @@ inputMachine.value = localStorage.getItem('odate_machine') || '';
 inputShop.addEventListener('change', () => localStorage.setItem('odate_shop', inputShop.value.trim()));
 inputMachine.addEventListener('change', () => localStorage.setItem('odate_machine', inputMachine.value.trim()));
 
-// --- 画像読み込み＆解析 ---
+// --- スクショ読み込み ＆ Gemini解析 ---
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     const apiKey = apiKeyInput.value.trim();
@@ -217,14 +253,14 @@ fileInput.addEventListener('change', async (e) => {
     }
 
     statusDiv.style.color = '#ff9f43';
-    statusDiv.innerText = '画像リサイズ・補正＆Gemini解析中...';
+    statusDiv.innerText = '画像解析中...';
 
     try {
         const base64Data = await processImage(file);
         const rawResult = await analyzeWithGemini(apiKey, base64Data);
         addSnapshot(rawResult);
         statusDiv.style.color = '#2ecc71';
-        statusDiv.innerText = `【${rawResult.invest}ポチ】解析完了！`;
+        statusDiv.innerText = `【${rawResult.invest}P】解析完了！`;
         btnSaveToSheet.style.display = 'block';
     } catch (err) {
         console.error(err);
@@ -234,7 +270,6 @@ fileInput.addEventListener('change', async (e) => {
     fileInput.value = '';
 });
 
-// 画像の最適化（リサイズ＋コントラスト強調）
 function processImage(file) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -254,13 +289,12 @@ function processImage(file) {
     });
 }
 
-// 503混雑時の自動リトライ関数
 async function fetchWithRetry(url, options, maxRetries = 3) {
     for (let i = 0; i < maxRetries; i++) {
         const res = await fetch(url, options);
         if (res.status === 503 || res.status === 429) {
             statusDiv.style.color = '#f1c40f';
-            statusDiv.innerText = `サーバー混雑のため自動再試行中... (${i + 1}/${maxRetries})`;
+            statusDiv.innerText = `混雑のため自動再試行中... (${i + 1}/${maxRetries})`;
             await new Promise(r => setTimeout(r, (i + 1) * 1500));
             continue;
         }
@@ -269,7 +303,6 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
     return fetch(url, options);
 }
 
-// Gemini API解析
 async function analyzeWithGemini(apiKey, base64Image) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
@@ -277,29 +310,20 @@ async function analyzeWithGemini(apiKey, base64Image) {
 あなたはパチンコ羽根モノ（おだて豚）データカウンターのOCR専門AIです。
 画像全体を確認し、以下の指定ルールに従って13個の【白文字の大きな整数値】を正確に抽出してJSONで返してください。
 
-【重要抽出ルール】
-1. 「対象ゲーム数」の直後（右横）に表示されている整数のみを target_game として取得してください。
-2. ボタングリッド内の各ボタン中央にある「大きな白文字の整数」を取得してください。
-   ※ ボタン下部に小さく書かれている「1/22.66」のような確率表記（分数・小数）は絶対に無視してください。
-   ※ 「-」や未記録は必ず 0 としてください。
-   ※ 縦棒1本の「1」を背景やハイフンと見落とさないよう厳密に認識してください。
-   ※ 「SP」「SP→V」のボタンは薄いグレー背景に白文字です。見落とさず読み取ってください。
-   ※ 当大、当中、当小のいずれかに1以上の数字がある場合、V入賞は必ず1以上になります（論理整合性を確認してください）。
-
 【項目マッピング】
-- target_game: 「対象ゲーム数」の横の数字
-- invest: 1段目左端（お金マークの上）
-- naki2: 1段目左から2番目（「②」の上）
-- replay: 1段目左から3番目（「リプレイ」の上）
-- rep_v: 1段目右端（「リプ→V」の上）
-- pick: 2段目左端（「羽根拾」の上）
-- v_hit: 2段目左から2番目（「V入賞」の上）
-- sp: 2段目左から3番目（「SP」の上）
-- sp_v: 2段目右端（「SP→V」の上）
-- kick: 3段目左端（「拾い→蹴り」の上）
-- r10: 3段目左から2番目（「当大」の上）
-- r5: 3段目左から3番目（「当中」の上）
-- r3: 3段目右端（「当小」の上）
+- target_game: 「対象ゲーム数」の横の数字 (X)
+- invest: 1段目左端（お金マークの上） (A:打込ポチ数)
+- naki2: 1段目左から2番目（「②」の上） (B:2穴)
+- replay: 1段目左から3番目（「リプレイ」の上） (C:リプレイ)
+- rep_v: 1段目右端（「リプ→V」の上） (D:リプV)
+- pick: 2段目左端（「羽根拾」の上） (E:羽根拾)
+- v_hit: 2段目左から2番目（「V入賞」の上） (F:V入賞)
+- sp: 2段目左から3番目（「SP」の上） (G:SP)
+- sp_v: 2段目右端（「SP→V」の上） (H:SP→V)
+- kick: 3段目左端（「拾い→蹴り」の上） (I:蹴り)
+- r10: 3段目左から2番目（「当大」の上） (J:10R)
+- r5: 3段目左から3番目（「当中」の上） (K:5R)
+- r3: 3段目右端（「当小」の上） (L:3R)
 
 必ず以下のJSON形式のみを出力してください:
 {
@@ -310,9 +334,7 @@ async function analyzeWithGemini(apiKey, base64Image) {
 `;
 
     const requestBody = {
-        contents: [{
-            parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }]
-        }],
+        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }],
         generationConfig: { response_mime_type: "application/json" }
     };
 
@@ -334,11 +356,8 @@ async function analyzeWithGemini(apiKey, base64Image) {
 // --- スナップショット管理 ＆ テーブル計算 ---
 function addSnapshot(data) {
     const idx = snapshots.findIndex(s => s.invest === data.invest);
-    if (idx >= 0) {
-        snapshots[idx] = data;
-    } else {
-        snapshots.push(data);
-    }
+    if (idx >= 0) snapshots[idx] = data;
+    else snapshots.push(data);
     snapshots.sort((a, b) => a.invest - b.invest);
     
     applyRecentN(recentN);
@@ -376,40 +395,84 @@ function applyRecentN(n) {
     snapshots.filter(s => s.invest > minTarget).forEach(s => selectedPochis.add(s.invest));
 }
 
+// --- 全18項目の完全計算ロジック ---
 function calcMetrics(startSnap, endSnap) {
     if (!endSnap) return null;
     const start = startSnap || { target_game: 0, invest: 0, naki2: 0, replay: 0, rep_v: 0, pick: 0, v_hit: 0, sp: 0, sp_v: 0, kick: 0, r10: 0, r5: 0, r3: 0 };
     
-    const diffInvest = endSnap.invest - start.invest;
-    const balls = diffInvest * 125;
-    const targetG = endSnap.target_game - start.target_game;
-    const totalNaki = targetG;
-    const totalPick = endSnap.pick - start.pick;
-    const totalV = endSnap.v_hit - start.v_hit;
-    const totalSp = endSnap.sp - start.sp;
-    const spV = endSnap.sp_v - start.sp_v;
-    const r10 = endSnap.r10 - start.r10;
-    const r5 = endSnap.r5 - start.r5;
-    const r3 = endSnap.r3 - start.r3;
+    const X = endSnap.target_game - start.target_game;
+    const A = endSnap.invest - start.invest;
+    const B = endSnap.naki2 - start.naki2;
+    const C = endSnap.replay - start.replay;
+    const D = endSnap.rep_v - start.rep_v;
+    const E = endSnap.pick - start.pick;
+    const F = endSnap.v_hit - start.v_hit;
+    const G = endSnap.sp - start.sp;
+    const H = endSnap.sp_v - start.sp_v;
+    const I = endSnap.kick - start.kick;
+    const J = endSnap.r10 - start.r10;
+    const K = endSnap.r5 - start.r5;
+    const L = endSnap.r3 - start.r3;
 
-    const nakiPerK = balls > 0 ? (totalNaki / (balls / 250)).toFixed(2) : '-';
-    const pickPerK = balls > 0 ? (totalPick / (balls / 250)).toFixed(2) : '-';
-    const pickRate = totalNaki > 0 ? ((totalPick / totalNaki) * 100).toFixed(1) + '%' : '-';
-    const spRate = totalPick > 0 ? `1/${(totalPick / (totalSp || 1)).toFixed(1)}` : '-';
-    const spDecRate = totalSp > 0 ? `${((spV / totalSp) * 100).toFixed(1)}% (${spV}/${totalSp})` : '-';
-    const yakuProb = totalPick > 0 ? `1/${(totalPick / (totalV || 1)).toFixed(1)}` : '-';
+    const totalHit = J + K + L;
+    const totalBalls = A * 125;
 
-    return { balls, nakiPerK, pickPerK, pickRate, spRate, spDecRate, yakuProb, rounds: `${r10}/${r5}/${r3}` };
+    // 【現状】
+    const totalNakiStr = `${X} 回`;
+    const naki2ProbStr = B > 0 ? `1/${(X / B).toFixed(1)}` : '-';
+    const hitCntStr = `${totalHit} 回`;
+    const avgRStr = totalHit > 0 ? `${(((J * 9) + (K * 4) + (L * 2)) / totalHit).toFixed(2)} R` : '-';
+
+    // 【統計】
+    const nakiPerKStr = A > 0 ? `${(X / (A / 2)).toFixed(2)} 回` : '-';
+    const pickPerKStr = A > 0 ? `${(E / (A / 2)).toFixed(2)} 回` : '-';
+    const pickRateStr = X > 0 ? `${((E / X) * 100).toFixed(1)} %` : '-';
+    const hitProbStr = totalHit > 0 ? `1/${(X / totalHit).toFixed(1)}` : '-';
+    const yakuProbStr = totalHit > 0 ? `1/${(E / totalHit).toFixed(1)}` : '-';
+
+    // 【役物】
+    const kickDenom = E - G;
+    const kickRateStr = kickDenom > 0 ? `${((I / kickDenom) * 100).toFixed(1)} %` : '-';
+    const spRateStr = E > 0 ? `${((G / E) * 100).toFixed(1)} %` : '-';
+    const spSuccessStr = G > 0 ? `${((H / G) * 100).toFixed(1)} %` : '-';
+    const repSuccessStr = C > 0 ? `${((D / C) * 100).toFixed(1)} %` : '-';
+
+    // 【ヒキ】
+    const hikiR = (((J * 9) + (K * 4) + (L * 2)) - (totalHit * 5)) * 110;
+    const hikiSp = (H - (G / 3)) * 550;
+    const hikiRep = (D - (I / 25.2)) * 550;
+    const hikiNorm = (F - (I / 8.4)) * 550;
+    const totalHiki = hikiR + hikiSp + hikiRep + hikiNorm;
+
+    const fmtHiki = (val) => {
+        const rounded = Math.round(val);
+        const sign = rounded > 0 ? `+${rounded.toLocaleString()}` : `${rounded.toLocaleString()}`;
+        const cls = rounded > 0 ? 'val-plus' : (rounded < 0 ? 'val-minus' : '');
+        return `<span class="${cls}">${sign} 玉</span>`;
+    };
+
+    return {
+        ballsText: `${A}P (${totalBalls.toLocaleString()}玉)`,
+        totalNakiStr, naki2ProbStr, hitCntStr, avgRStr,
+        nakiPerKStr, pickPerKStr, pickRateStr, hitProbStr, yakuProbStr,
+        kickRateStr, spRateStr, spSuccessStr, repSuccessStr,
+        totalHikiHtml: fmtHiki(totalHiki),
+        hikiRHtml: fmtHiki(hikiR),
+        hikiSpHtml: fmtHiki(hikiSp),
+        hikiRepHtml: fmtHiki(hikiRep),
+        hikiNormHtml: fmtHiki(hikiNorm)
+    };
 }
 
 function updateTable() {
     if (snapshots.length === 0) return;
 
+    // 列①：本日全体
     const latest = snapshots[snapshots.length - 1];
     const m1 = calcMetrics(null, latest);
-    document.getElementById('label_col1').innerText = `0〜${latest.invest}P (${latest.invest * 125}玉)`;
     fillColumn('c1', m1);
 
+    // 列②：選択区間
     if (selectedPochis.size > 0) {
         const sortedSel = Array.from(selectedPochis).sort((a,b)=>a-b);
         const minP = sortedSel[0];
@@ -419,28 +482,42 @@ function updateTable() {
         const startSnap = startIdx > 0 ? snapshots[startIdx - 1] : null;
 
         const m2 = calcMetrics(startSnap, endSnap);
-        document.getElementById('label_col2').innerText = `${startSnap ? startSnap.invest : 0}〜${maxP}P (${m2.balls}玉)`;
         fillColumn('c2', m2);
     } else {
-        document.getElementById('label_col2').innerText = '-';
         fillColumn('c2', null);
     }
 
+    // 列③：過去台
     updatePastColumn();
 }
 
 function fillColumn(prefix, m) {
-    document.getElementById(`${prefix}_balls`).innerText = m ? m.balls.toLocaleString() + '玉' : '-';
-    document.getElementById(`${prefix}_naki`).innerText = m ? m.nakiPerK + ' 回' : '-';
-    document.getElementById(`${prefix}_pick_k`).innerText = m ? m.pickPerK + ' 個' : '-';
-    document.getElementById(`${prefix}_pick_r`).innerText = m ? m.pickRate : '-';
-    document.getElementById(`${prefix}_sp_r`).innerText = m ? m.spRate : '-';
-    document.getElementById(`${prefix}_sp_v`).innerText = m ? m.spDecRate : '-';
-    document.getElementById(`${prefix}_yaku`).innerText = m ? m.yakuProb : '-';
-    document.getElementById(`${prefix}_rounds`).innerText = m ? m.rounds : '-';
+    document.getElementById(`${prefix}_balls`).innerText = m ? m.ballsText : '-';
+    // 現状
+    document.getElementById(`${prefix}_total_naki`).innerText = m ? m.totalNakiStr : '-';
+    document.getElementById(`${prefix}_naki2_prob`).innerText = m ? m.naki2ProbStr : '-';
+    document.getElementById(`${prefix}_hit_cnt`).innerText = m ? m.hitCntStr : '-';
+    document.getElementById(`${prefix}_avg_r`).innerText = m ? m.avgRStr : '-';
+    // 統計
+    document.getElementById(`${prefix}_naki_k`).innerText = m ? m.nakiPerKStr : '-';
+    document.getElementById(`${prefix}_pick_k`).innerText = m ? m.pickPerKStr : '-';
+    document.getElementById(`${prefix}_pick_r`).innerText = m ? m.pickRateStr : '-';
+    document.getElementById(`${prefix}_hit_prob`).innerText = m ? m.hitProbStr : '-';
+    document.getElementById(`${prefix}_yaku_prob`).innerText = m ? m.yakuProbStr : '-';
+    // 役物
+    document.getElementById(`${prefix}_kick_r`).innerText = m ? m.kickRateStr : '-';
+    document.getElementById(`${prefix}_sp_r`).innerText = m ? m.spRateStr : '-';
+    document.getElementById(`${prefix}_sp_v`).innerText = m ? m.spSuccessStr : '-';
+    document.getElementById(`${prefix}_rep_v`).innerText = m ? m.repSuccessStr : '-';
+    // ヒキ
+    document.getElementById(`${prefix}_total_hiki`).innerHTML = m ? m.totalHikiHtml : '-';
+    document.getElementById(`${prefix}_hiki_r`).innerHTML = m ? m.hikiRHtml : '-';
+    document.getElementById(`${prefix}_hiki_sp`).innerHTML = m ? m.hikiSpHtml : '-';
+    document.getElementById(`${prefix}_hiki_rep`).innerHTML = m ? m.hikiRepHtml : '-';
+    document.getElementById(`${prefix}_hiki_norm`).innerHTML = m ? m.hikiNormHtml : '-';
 }
 
-// --- スプレッドシート保存 ＆ 過去台呼出 ---
+// --- スプレッドシート連携 ---
 btnSaveToSheet.onclick = async () => {
     const gasUrl = gasUrlInput.value.trim();
     if (!gasUrl) { alert('右上の「⚙️ 設定」からGAS WebApp URLを入力してください'); return; }
@@ -467,7 +544,7 @@ btnSaveToSheet.onclick = async () => {
             body: JSON.stringify(payload)
         });
         statusDiv.style.color = '#2ecc71';
-        statusDiv.innerText = `【${latest.invest}ポチ】スプレッドシートに保存しました！`;
+        statusDiv.innerText = `【${latest.invest}P】保存完了！`;
     } catch (e) {
         statusDiv.style.color = '#e74c3c';
         statusDiv.innerText = '保存エラー: ' + e.message;
@@ -497,10 +574,10 @@ document.getElementById('btnFetchPast').onclick = async () => {
         });
 
         statusDiv.style.color = '#2ecc71';
-        statusDiv.innerText = `同台の過去データ ${pastRecords.length}件 を取得しました`;
+        statusDiv.innerText = `過去データ ${pastRecords.length}件 取得`;
     } catch (e) {
         statusDiv.style.color = '#e74c3c';
-        statusDiv.innerText = '過去データ取得失敗: ' + e.message;
+        statusDiv.innerText = '取得失敗: ' + e.message;
     }
 };
 
@@ -509,7 +586,6 @@ selectPastData.onchange = () => updatePastColumn();
 function updatePastColumn() {
     const idx = selectPastData.value;
     if (idx === '' || !pastRecords[idx]) {
-        document.getElementById('label_col3').innerText = '-';
         fillColumn('c3', null);
         return;
     }
@@ -517,15 +593,18 @@ function updatePastColumn() {
     const m3 = calcMetrics(null, {
         invest: Number(r['ポチ数'] || r['投資']),
         target_game: Number(r['対象G']),
+        naki2: Number(r['②'] || 0),
+        replay: Number(r['リプ'] || 0),
+        rep_v: Number(r['リプV'] || 0),
         pick: Number(r['羽根拾']),
         v_hit: Number(r['V入賞']),
         sp: Number(r['SP']),
         sp_v: Number(r['SPV']),
+        kick: Number(r['拾蹴'] || 0),
         r10: Number(r['当大']),
         r5: Number(r['当中']),
         r3: Number(r['当小'])
     });
-    document.getElementById('label_col3').innerText = `${r['日付']} (${r['ポチ数']}P)`;
     fillColumn('c3', m3);
 }
 </script>
