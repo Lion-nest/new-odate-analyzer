@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析診断ツール (v1.0)</title>
+    <title>おだて豚 解析診断ツール (v1.0.1)</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -30,23 +30,26 @@
 </head>
 <body>
 
-<h1>🐷 おだて豚 解析診断ツール <span style="color:#fff; background:#e67e22; padding:2px 6px; border-radius:4px; font-size:0.8rem;">v1.0</span></h1>
+<h1>🐷 おだて豚 解析診断ツール <span style="color:#fff; background:#e67e22; padding:2px 6px; border-radius:4px; font-size:0.8rem;">v1.0.1</span></h1>
 
+<!-- 接続情報 -->
 <div class="card">
-    <label>① Gemini APIキー</label>
+    <label>① Gemini APIキー（無料枠プロジェクト: 260902hane のキー）</label>
     <input type="password" id="apiKey" placeholder="AIzaSy...">
 
     <label>② GAS WebApp URL</label>
     <input type="text" id="gasUrl" placeholder="https://script.google.com/...">
 </div>
 
+<!-- 切り分けテスト1：API通信疎通テスト -->
 <div class="card">
     <div style="font-weight: bold; color: var(--accent-blue);">【テスト1】Gemini API 接続＆モデル自動判別</div>
-    <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">画像を使わず、APIキーと通信できるか＆どのモデルが使えるかを直接テストします。</div>
+    <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">gemini-3.6-flash を含めて接続テストを実行します。</div>
     <button class="btn-test1" id="btnTestApi">① Gemini API 接続テスト実行</button>
     <div id="logApi" class="log-box">（テスト未実行）</div>
 </div>
 
+<!-- 切り分けテスト2：画像OCR読み取りテスト -->
 <div class="card">
     <div style="font-weight: bold; color: var(--accent-green);">【テスト2】スクショ画像 OCR読み取り</div>
     <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">スクショを選択して、13項目の数値が正しくJSON抽出できるかをテストします。</div>
@@ -54,34 +57,26 @@
     <div id="logOcr" class="log-box">（画像未選択）</div>
 </div>
 
-<div class="card">
-    <div style="font-weight: bold; color: var(--accent-yellow);">【テスト3】GAS スプレッドシート保存テスト</div>
-    <button class="btn-test2" id="btnTestGas">③ スプレッドシート書込テスト実行</button>
-    <div id="logGas" class="log-box">（テスト未実行）</div>
-</div>
-
 <script>
 const apiKeyInput = document.getElementById('apiKey');
 const gasUrlInput = document.getElementById('gasUrl');
 const logApi = document.getElementById('logApi');
 const logOcr = document.getElementById('logOcr');
-const logGas = document.getElementById('logGas');
 
-// ローカル保存
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
 gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
 apiKeyInput.addEventListener('change', () => localStorage.setItem('odate_gemini_key', apiKeyInput.value.trim()));
 gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url', gasUrlInput.value.trim()));
 
-let activeModelName = 'gemini-2.5-flash';
+let activeModelName = 'gemini-3.6-flash';
 
-// --- テスト1：API接続 ＆ 利用可能モデルの探索 ---
+// --- テスト1：API接続テスト ---
 document.getElementById('btnTestApi').onclick = async () => {
     const key = apiKeyInput.value.trim();
     if (!key) { alert('APIキーを入力してください'); return; }
     
     logApi.innerHTML = '接続テスト中...\n';
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     let success = false;
 
     for (const m of modelsToTry) {
@@ -97,7 +92,7 @@ document.getElementById('btnTestApi').onclick = async () => {
                 logApi.innerHTML += `<span class="ok">【成功】</span>\n`;
                 activeModelName = m;
                 success = true;
-                logApi.innerHTML += `\n<span class="ok">👉 判定結果: このAPIキーでは [${m}] が正常稼働しています！</span>`;
+                logApi.innerHTML += `\n<span class="ok">👉 判定結果: [${m}] で正常に通信できました！</span>`;
                 break;
             } else {
                 logApi.innerHTML += `<span class="ng">【失敗: ${data.error?.message || res.statusText}】</span>\n`;
@@ -108,11 +103,11 @@ document.getElementById('btnTestApi').onclick = async () => {
     }
 
     if (!success) {
-        logApi.innerHTML += `\n<span class="ng">❌ すべてのモデルで失敗しました。APIキーが無効か、Google AI Studioの設定を確認してください。</span>`;
+        logApi.innerHTML += `\n<span class="ng">❌ すべてのモデルで失敗しました。</span>`;
     }
 };
 
-// --- テスト2：画像OCR ---
+// --- テスト2：画像OCRテスト ---
 document.getElementById('fileInput').onchange = async (e) => {
     const file = e.target.files[0];
     const key = apiKeyInput.value.trim();
@@ -161,33 +156,6 @@ document.getElementById('fileInput').onchange = async (e) => {
         }
     };
     reader.readAsDataURL(file);
-};
-
-// --- テスト3：GAS保存 ---
-document.getElementById('btnTestGas').onclick = async () => {
-    const url = gasUrlInput.value.trim();
-    if (!url) { alert('GAS URLを入力してください'); return; }
-
-    logGas.innerHTML = 'スプレッドシートへテストデータ送信中...\n';
-    try {
-        await fetch(url, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                date: "2026-09-02",
-                shop: "テスト店",
-                machine_number: "99",
-                recorder: "テスト",
-                pochi: 10,
-                target_game: 72,
-                memo: "疎通テスト成功"
-            })
-        });
-        logGas.innerHTML = `<span class="ok">【送信完了】</span>\nスプレッドシートを開いて、新しい行に「テスト店 / 99番台」が書き込まれているか確認してください！`;
-    } catch (e) {
-        logGas.innerHTML = `<span class="ng">【送信エラー】</span> ` + e.message;
-    }
 };
 </script>
 
