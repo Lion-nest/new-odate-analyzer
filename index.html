@@ -20,8 +20,8 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 12px; padding-bottom: 120px; font-size: 14px; }
         h1 { font-size: 1.1rem; text-align: center; margin: 4px 0 12px 0; color: #fff; }
         .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         label { font-size: 0.75rem; color: var(--text-sub); display: block; margin-bottom: 3px; }
         input, select { width: 100%; padding: 8px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 0.9rem; }
         button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; }
@@ -50,7 +50,6 @@
 
 <h1>🐷 おだて豚 解析ダッシュボード</h1>
 
-<!-- 設定・メタ情報 -->
 <div class="card">
     <div class="grid-3">
         <div>
@@ -83,7 +82,6 @@
     </div>
 </div>
 
-<!-- API設定・スクショ取込 -->
 <div class="card">
     <div class="grid-2">
         <div>
@@ -100,7 +98,6 @@
     <div id="status">準備完了</div>
 </div>
 
-<!-- マルチ列比較テーブル -->
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <span style="font-weight: bold;">📊 リアルタイム分析</span>
@@ -133,7 +130,6 @@
     <button id="btnSaveToSheet" class="btn-save" style="display:none;">💾 現在のデータをスプレッドシートに保存</button>
 </div>
 
-<!-- 下部固定：ポチボタン＆区間セレクター -->
 <div class="bottom-bar">
     <div class="quick-controls">
         <div style="display: flex; align-items: center; gap: 4px;">
@@ -227,8 +223,8 @@ function enhanceContrastAndGetBase64(file) {
 }
 
 async function analyzeWithGemini(apiKey, base64Image) {
-    // 正式なエンドポイント形式
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // 優先して呼び出すモデル候補一覧（利用可能なものを順次試行）
+    const modelCandidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
     const prompt = `
 あなたはパチンコ羽根モノ（おだて豚）データカウンターのOCR専門AIです。
@@ -278,19 +274,29 @@ async function analyzeWithGemini(apiKey, base64Image) {
         }
     };
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
+    let lastError = null;
+    for (const model of modelCandidates) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Gemini APIエラー');
+            if (response.ok) {
+                const resJson = await response.json();
+                return JSON.parse(resJson.candidates[0].content.parts[0].text);
+            } else {
+                const errJson = await response.json();
+                lastError = new Error(`${model}: ${errJson.error?.message || response.statusText}`);
+            }
+        } catch (e) {
+            lastError = e;
+        }
     }
 
-    const resJson = await response.json();
-    return JSON.parse(resJson.candidates[0].content.parts[0].text);
+    throw lastError || new Error('Gemini APIの呼び出しに失敗しました');
 }
 
 function addSnapshot(data) {
