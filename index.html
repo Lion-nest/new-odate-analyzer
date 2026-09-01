@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析診断ツール (v1.0.1)</title>
+    <title>おだて豚 解析診断ツール (v1.0.2)</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -22,102 +22,82 @@
         input { width: 100%; padding: 10px; background: #111; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 0.9rem; margin-bottom: 8px; }
         button { width: 100%; padding: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; margin-top: 6px; }
         .btn-test1 { background: var(--accent-blue); color: #fff; }
-        .btn-test2 { background: var(--accent-green); color: #000; }
         .log-box { background: #000; border: 1px solid #444; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; min-height: 80px; max-height: 250px; overflow-y: auto; margin-top: 8px; }
         .ok { color: var(--accent-green); }
         .ng { color: #e74c3c; }
+        .warn { color: var(--accent-yellow); }
     </style>
 </head>
 <body>
 
-<h1>🐷 おだて豚 解析診断ツール <span style="color:#fff; background:#e67e22; padding:2px 6px; border-radius:4px; font-size:0.8rem;">v1.0.1</span></h1>
+<h1>🐷 おだて豚 解析診断ツール <span style="color:#fff; background:#e67e22; padding:2px 6px; border-radius:4px; font-size:0.8rem;">v1.0.2</span></h1>
 
 <!-- 接続情報 -->
 <div class="card">
-    <label>① Gemini APIキー（無料枠プロジェクト: 260902hane のキー）</label>
+    <label>① Gemini APIキー</label>
     <input type="password" id="apiKey" placeholder="AIzaSy...">
-
-    <label>② GAS WebApp URL</label>
-    <input type="text" id="gasUrl" placeholder="https://script.google.com/...">
 </div>
 
-<!-- 切り分けテスト1：API通信疎通テスト -->
+<!-- 画像OCRテスト（503自動リトライ付き） -->
 <div class="card">
-    <div style="font-weight: bold; color: var(--accent-blue);">【テスト1】Gemini API 接続＆モデル自動判別</div>
-    <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">gemini-3.6-flash を含めて接続テストを実行します。</div>
-    <button class="btn-test1" id="btnTestApi">① Gemini API 接続テスト実行</button>
-    <div id="logApi" class="log-box">（テスト未実行）</div>
-</div>
-
-<!-- 切り分けテスト2：画像OCR読み取りテスト -->
-<div class="card">
-    <div style="font-weight: bold; color: var(--accent-green);">【テスト2】スクショ画像 OCR読み取り</div>
-    <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">スクショを選択して、13項目の数値が正しくJSON抽出できるかをテストします。</div>
+    <div style="font-weight: bold; color: var(--accent-green);">【テスト2】スクショ画像 OCR読み取り (自動リトライ対応)</div>
+    <div style="font-size: 0.75rem; color: #aaa; margin: 4px 0 8px 0;">失敗したスクショ（IMG_2758, IMG_2521 等）を再度選択してテストしてください。</div>
     <input type="file" id="fileInput" accept="image/*">
     <div id="logOcr" class="log-box">（画像未選択）</div>
 </div>
 
 <script>
 const apiKeyInput = document.getElementById('apiKey');
-const gasUrlInput = document.getElementById('gasUrl');
-const logApi = document.getElementById('logApi');
 const logOcr = document.getElementById('logOcr');
 
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
-gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
 apiKeyInput.addEventListener('change', () => localStorage.setItem('odate_gemini_key', apiKeyInput.value.trim()));
-gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url', gasUrlInput.value.trim()));
 
-let activeModelName = 'gemini-3.6-flash';
+// 画像の最適化（リサイズ＋コントラスト強調）
+function processImage(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // サーバー負荷軽減のため横幅を800pxにリサイズ（文字認識には十分）
+            const maxW = 800;
+            const scale = Math.min(1, maxW / img.width);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
 
-// --- テスト1：API接続テスト ---
-document.getElementById('btnTestApi').onclick = async () => {
-    const key = apiKeyInput.value.trim();
-    if (!key) { alert('APIキーを入力してください'); return; }
-    
-    logApi.innerHTML = '接続テスト中...\n';
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-    let success = false;
+            ctx.filter = 'contrast(130%) brightness(105%)';
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
 
-    for (const m of modelsToTry) {
-        logApi.innerHTML += `・モデル [${m}] を試行中... `;
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                logApi.innerHTML += `<span class="ok">【成功】</span>\n`;
-                activeModelName = m;
-                success = true;
-                logApi.innerHTML += `\n<span class="ok">👉 判定結果: [${m}] で正常に通信できました！</span>`;
-                break;
-            } else {
-                logApi.innerHTML += `<span class="ng">【失敗: ${data.error?.message || res.statusText}】</span>\n`;
-            }
-        } catch (e) {
-            logApi.innerHTML += `<span class="ng">【通信エラー: ${e.message}】</span>\n`;
+// 503混雑時に自動で最大3回再試行する送信関数
+async function fetchWithRetry(url, options, maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        const res = await fetch(url, options);
+        if (res.status === 503 || res.status === 429) {
+            logOcr.innerHTML += `<span class="warn">⚠️ サーバー混雑 (503)。${i + 1}秒後に自動再試行します... (${i + 1}/${maxRetries})</span>\n`;
+            await new Promise(r => setTimeout(r, (i + 1) * 1500));
+            continue;
         }
+        return res;
     }
+    return fetch(url, options); // 最後の試行
+}
 
-    if (!success) {
-        logApi.innerHTML += `\n<span class="ng">❌ すべてのモデルで失敗しました。</span>`;
-    }
-};
-
-// --- テスト2：画像OCRテスト ---
 document.getElementById('fileInput').onchange = async (e) => {
     const file = e.target.files[0];
     const key = apiKeyInput.value.trim();
     if (!file || !key) return;
 
-    logOcr.innerHTML = `画像解析中（使用モデル: ${activeModelName}）...\n`;
+    logOcr.innerHTML = `画像処理＆解析中...\n`;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-        const base64Data = reader.result.split(',')[1];
+    try {
+        const base64Data = await processImage(file);
         const prompt = `
 以下のパチンコカウンター画像から、中央に書かれた大きな整数の数字のみを抽出しJSONで返してください。
 - target_game: 「対象ゲーム数」の横の数字
@@ -135,27 +115,28 @@ document.getElementById('fileInput').onchange = async (e) => {
 - r3: 3段目右端（「当小」）
 ※ハイフン「-」は 0。
 `;
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModelName}:generateContent?key=${key}`, {
+        const res = await fetchWithRetry(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`,
+            {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64Data } }] }],
                     generationConfig: { response_mime_type: "application/json" }
                 })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                const text = data.candidates[0].content.parts[0].text;
-                logOcr.innerHTML = `<span class="ok">【OCR抽出成功！】</span>\n` + JSON.stringify(JSON.parse(text), null, 2);
-            } else {
-                logOcr.innerHTML = `<span class="ng">【OCRエラー】</span>\n` + JSON.stringify(data, null, 2);
             }
-        } catch (err) {
-            logOcr.innerHTML = `<span class="ng">【通信エラー】</span> ` + err.message;
+        );
+
+        const data = await res.json();
+        if (res.ok) {
+            const text = data.candidates[0].content.parts[0].text;
+            logOcr.innerHTML += `<span class="ok">【OCR抽出成功！】</span>\n` + JSON.stringify(JSON.parse(text), null, 2);
+        } else {
+            logOcr.innerHTML += `<span class="ng">【OCRエラー】</span>\n` + JSON.stringify(data, null, 2);
         }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+        logOcr.innerHTML += `<span class="ng">【通信エラー】</span> ` + err.message;
+    }
 };
 </script>
 
