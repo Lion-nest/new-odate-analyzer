@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v1.5</title>
+    <title>おだて豚 解析ダッシュボード v1.6</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -21,13 +21,14 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 8px; padding-bottom: 95px; font-size: 13px; }
         
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        h1 { font-size: 1rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 6px; }
-        .version-badge { background: #e67e22; color: #fff; font-size: 0.68rem; padding: 2px 5px; border-radius: 4px; }
-        .btn-gear { background: #2c2c3d; border: 1px solid var(--border-color); color: #ccc; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+        h1 { font-size: 0.95rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 4px; }
+        .version-badge { background: #e67e22; color: #fff; font-size: 0.65rem; padding: 1px 4px; border-radius: 4px; }
+        .header-actions { display: flex; align-items: center; gap: 6px; }
+        .btn-nav { background: #2c3e50; border: 1px solid #4a627a; color: #5dade2; text-decoration: none; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; display: inline-flex; align-items: center; }
+        .btn-gear { background: #2c2c3d; border: 1px solid var(--border-color); color: #ccc; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; }
 
         .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; margin-bottom: 6px; }
         
-        /* 入力グリッド（Safariのdate崩れ完全対策） */
         .grid-3 { display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 6px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         label { font-size: 0.68rem; color: var(--text-sub); display: block; margin-bottom: 2px; }
@@ -45,7 +46,6 @@
             appearance: none;
         }
 
-        /* スクショ取込 ＆ 数値プレビューエリア */
         .upload-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: stretch; }
         .file-box { display: flex; flex-direction: column; justify-content: center; background: var(--bg-input); border: 1px dashed #555; border-radius: 6px; padding: 4px; text-align: center; }
         .file-box input[type="file"] { display: none; }
@@ -57,7 +57,6 @@
         .preview-lines div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #bbb; }
         .preview-lines span { color: #fff; font-weight: bold; }
 
-        /* 比較テーブル */
         .table-wrap { overflow-x: auto; margin-top: 4px; }
         table.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
         table.cmp-table th, table.cmp-table td { border: 1px solid var(--border-color); padding: 3px 2px; }
@@ -69,7 +68,6 @@
         button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
         .btn-save { background: var(--accent-green); color: #000; width: 100%; padding: 8px; margin-top: 6px; font-size: 0.9rem; }
 
-        /* 下部固定ポチバー */
         .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 5px 8px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
         .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
         .pochi-scroll { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
@@ -77,7 +75,6 @@
         .pochi-btn.active { background: var(--accent-yellow); color: #000; border-color: #f39c12; }
         .badge-btn { background: #3a3a4c; color: #fff; font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; }
 
-        /* 設定・修正モーダル */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 200; display: none; overflow-y: auto; padding: 12px; }
         .modal-content { background: var(--bg-card); border: 1px solid #444; border-radius: 8px; padding: 12px; max-width: 500px; margin: auto; }
         .modal-title { font-size: 0.95rem; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; }
@@ -89,8 +86,12 @@
 <body>
 
 <div class="header-bar">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.5</span></h1>
-    <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.6</span></h1>
+    <div class="header-actions">
+        <!-- ハネキタへの遷移リンク -->
+        <a href="https://lion-nest.github.io/hanekita/" class="btn-nav">ハネキタ ↗</a>
+        <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
+    </div>
 </div>
 
 <!-- 設定・メタ情報 -->
@@ -274,7 +275,6 @@ let pastRecords = [];
 let recentN = 20;
 let lastUploadedBase64 = null;
 
-// 要素
 const inputDate = document.getElementById('inputDate');
 const inputShop = document.getElementById('inputShop');
 const inputMachine = document.getElementById('inputMachine');
@@ -290,7 +290,6 @@ const previewValues = document.getElementById('previewValues');
 const prevPochiLabel = document.getElementById('prevPochiLabel');
 const btnOpenEdit = document.getElementById('btnOpenEdit');
 
-// 初期設定
 inputDate.value = new Date().toISOString().split('T')[0];
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
 gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
@@ -303,7 +302,6 @@ gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url
 inputShop.addEventListener('change', () => localStorage.setItem('odate_shop', inputShop.value.trim()));
 inputMachine.addEventListener('change', () => localStorage.setItem('odate_machine', inputMachine.value.trim()));
 
-// 画像処理＆OCR
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     const apiKey = apiKeyInput.value.trim();
