@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v1.9</title>
+    <title>おだて豚 解析ダッシュボード v2.0</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -18,7 +18,7 @@
             --text-sub: #8f8f9d;
         }
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 8px; padding-bottom: 95px; font-size: 13px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 8px; padding-bottom: 120px; font-size: 13px; }
         
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         h1 { font-size: 0.95rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 4px; }
@@ -68,10 +68,11 @@
         button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
         .btn-save { background: var(--accent-green); color: #000; width: 100%; padding: 8px; margin-top: 6px; font-size: 0.9rem; }
 
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 5px 8px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
-        .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-        .pochi-scroll { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
-        .pochi-btn { flex: 0 0 auto; background: #2c2c3d; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; }
+        /* 下部固定ポチバー（折り返し対応・スクロール可能） */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 6px 8px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); max-height: 120px; overflow-y: auto; }
+        .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .pochi-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+        .pochi-btn { flex: 0 0 auto; min-width: 44px; text-align: center; background: #2c2c3d; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; font-size: 0.75rem; font-weight: bold; }
         .pochi-btn.active { background: var(--accent-yellow); color: #000; border-color: #f39c12; }
         .badge-btn { background: #3a3a4c; color: #fff; font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; }
 
@@ -86,7 +87,7 @@
 <body>
 
 <div class="header-bar">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.9</span></h1>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v2.0</span></h1>
     <div class="header-actions">
         <a href="https://lion-nest.github.io/hanekita/" class="btn-nav">ハネキタ ↗</a>
         <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
@@ -112,9 +113,10 @@
     <div class="grid-2" style="margin-top: 4px;">
         <div>
             <label>記録者</label>
+            <!-- けん / たいこ に変更 -->
             <select id="inputRecorder">
-                <option value="自分">自分</option>
                 <option value="けん">けん</option>
+                <option value="たいこ">たいこ</option>
             </select>
         </div>
         <div>
@@ -198,7 +200,7 @@
     <button id="btnSaveToSheet" class="btn-save" style="display:none;">💾 スプレッドシートに保存</button>
 </div>
 
-<!-- 下部固定ポチバー -->
+<!-- 下部固定ポチバー（折り返しレイアウト） -->
 <div class="bottom-bar">
     <div class="quick-controls">
         <div style="display: flex; align-items: center; gap: 4px;">
@@ -212,7 +214,7 @@
             <button id="btnClearSelect" class="badge-btn">解除</button>
         </div>
     </div>
-    <div id="pochiButtonContainer" class="pochi-scroll">
+    <div id="pochiButtonContainer" class="pochi-wrap">
         <span style="font-size: 0.7rem; color: #777; line-height: 26px;">スクショ追加でポチボタンが並びます</span>
     </div>
 </div>
@@ -296,16 +298,14 @@ gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
 inputShop.value = localStorage.getItem('odate_shop') || '';
 inputMachine.value = localStorage.getItem('odate_machine') || '';
 
-// 記録者の自動記憶（端末ごとに「自分」か「けん」かを復元）
-inputRecorder.value = localStorage.getItem('odate_recorder') || '自分';
+// 端末ごとの記録者復元（初期値は「たいこ」）
+inputRecorder.value = localStorage.getItem('odate_recorder') || 'たいこ';
 
 document.getElementById('btnOpenSetting').onclick = () => document.getElementById('settingModal').style.display = 'block';
 apiKeyInput.addEventListener('change', () => localStorage.setItem('odate_gemini_key', apiKeyInput.value.trim()));
 gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url', gasUrlInput.value.trim()));
 inputShop.addEventListener('change', () => localStorage.setItem('odate_shop', inputShop.value.trim()));
 inputMachine.addEventListener('change', () => localStorage.setItem('odate_machine', inputMachine.value.trim()));
-
-// 記録者を変更した際に即時保存
 inputRecorder.addEventListener('change', () => localStorage.setItem('odate_recorder', inputRecorder.value));
 
 fileInput.addEventListener('change', async (e) => {
@@ -466,6 +466,7 @@ function addSnapshot(data) {
     updateTable();
 }
 
+// 折り返し対応のポチボタン描画
 function renderPochiButtons() {
     pochiContainer.innerHTML = '';
     snapshots.forEach(s => {
@@ -644,6 +645,22 @@ btnSaveToSheet.onclick = async () => {
     }
 };
 
+// 日付フォーマット関数（時差ズレ防止＆すっきり表示）
+function formatPastDate(rawDate) {
+    if (!rawDate) return '';
+    if (typeof rawDate === 'string' && rawDate.includes('T')) {
+        const d = new Date(rawDate);
+        // UTCとJSTの時差を補正
+        const jstDate = new Date(d.getTime() + (d.getTimezoneOffset() + 540) * 60000);
+        const yyyy = jstDate.getFullYear();
+        const mm = String(jstDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(jstDate.getDate()).padStart(2, '0');
+        return `${yyyy}/${mm}/${dd}`;
+    }
+    return String(rawDate).split('T')[0].replace(/-/g, '/');
+}
+
+// 過去台同期
 document.getElementById('btnFetchPast').onclick = async () => {
     const gasUrl = gasUrlInput.value.trim();
     const curShop = inputShop.value.trim();
@@ -662,8 +679,9 @@ document.getElementById('btnFetchPast').onclick = async () => {
         pastRecords.forEach((r, idx) => {
             const opt = document.createElement('option');
             opt.value = idx;
+            const cleanDate = formatPastDate(r['日付']);
             const memoPart = r['メモ'] ? ` / ${r['メモ']}` : '';
-            opt.innerText = `${r['日付']} (${r['ポチ数']}P / ${r['記録者']}${memoPart})`;
+            opt.innerText = `${cleanDate} (${r['ポチ数']}P / ${r['記録者']}${memoPart})`;
             selectPastData.appendChild(opt);
         });
 
@@ -700,7 +718,7 @@ function updatePastColumn() {
         r5: Number(r['当中']),
         r3: Number(r['当小'])
     });
-    document.getElementById('label_col3').innerText = `${r['日付']}`;
+    document.getElementById('label_col3').innerText = `${formatPastDate(r['日付'])}`;
     fillColumn('c3', m3);
 }
 </script>
