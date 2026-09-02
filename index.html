@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v1.6</title>
+    <title>おだて豚 解析ダッシュボード v1.7</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -86,9 +86,8 @@
 <body>
 
 <div class="header-bar">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.6</span></h1>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.7</span></h1>
     <div class="header-actions">
-        <!-- ハネキタへの遷移リンク -->
         <a href="https://lion-nest.github.io/hanekita/" class="btn-nav">ハネキタ ↗</a>
         <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
     </div>
@@ -490,50 +489,58 @@ function applyRecentN(n) {
     snapshots.filter(s => s.invest > minTarget).forEach(s => selectedPochis.add(s.invest));
 }
 
+// ご指定の正確な計算ロジック
 function calcMetrics(startSnap, endSnap) {
     if (!endSnap) return null;
     const start = startSnap || { target_game: 0, invest: 0, naki2: 0, replay: 0, rep_v: 0, pick: 0, v_hit: 0, sp: 0, sp_v: 0, kick: 0, r10: 0, r5: 0, r3: 0 };
     
-    const diffInvest = endSnap.invest - start.invest;
-    const balls = diffInvest * 125;
-    const targetG = endSnap.target_game - start.target_game;
-    const totalNaki = targetG;
-    const naki2 = endSnap.naki2 - start.naki2;
-    const replay = endSnap.replay - start.replay;
-    const rep_v = endSnap.rep_v - start.rep_v;
-    const totalPick = endSnap.pick - start.pick;
-    const totalV = endSnap.v_hit - start.v_hit;
-    const totalSp = endSnap.sp - start.sp;
-    const spV = endSnap.sp_v - start.sp_v;
-    const kick = endSnap.kick - start.kick;
-    const r10 = endSnap.r10 - start.r10;
-    const r5 = endSnap.r5 - start.r5;
-    const r3 = endSnap.r3 - start.r3;
+    const diffInvest = endSnap.invest - start.invest; // A
+    const X = endSnap.target_game - start.target_game; // 総ナキ数
+    const B = endSnap.naki2 - start.naki2; // ②開放
+    const C = endSnap.replay - start.replay; // リプレイ
+    const D = endSnap.rep_v - start.rep_v; // リプ→V
+    const E = endSnap.pick - start.pick; // 羽根拾
+    const F = endSnap.v_hit - start.v_hit; // V入賞
+    const G = endSnap.sp - start.sp; // SP
+    const H = endSnap.sp_v - start.sp_v; // SP→V
+    const I = endSnap.kick - start.kick; // 拾→蹴
+    const J = endSnap.r10 - start.r10; // 10R
+    const K = endSnap.r5 - start.r5; // 5R
+    const L = endSnap.r3 - start.r3; // 3R
 
-    const naki2Prob = naki2 > 0 ? `1/${(totalNaki / naki2).toFixed(1)}` : '-';
-    const avgR = totalV > 0 ? ((r10 * 10 + r5 * 5 + r3 * 3) / totalV).toFixed(2) + ' R' : '-';
-    const nakiPerK = balls > 0 ? (totalNaki / (balls / 250)).toFixed(2) + ' 回' : '-';
-    const pickPerK = balls > 0 ? (totalPick / (balls / 250)).toFixed(2) + ' 回' : '-';
-    const pickRate = totalNaki > 0 ? ((totalPick / totalNaki) * 100).toFixed(1) + ' %' : '-';
-    const hitProb = totalNaki > 0 && totalV > 0 ? `1/${(totalNaki / totalV).toFixed(1)}` : '-';
-    const yakuProb = totalPick > 0 && totalV > 0 ? `1/${(totalPick / totalV).toFixed(1)}` : '-';
-    const kickRate = totalPick > 0 ? ((kick / totalPick) * 100).toFixed(1) + ' %' : '-';
-    const spRate = totalPick > 0 ? ((totalSp / totalPick) * 100).toFixed(1) + ' %' : '-';
-    const spSuccess = totalSp > 0 ? ((spV / totalSp) * 100).toFixed(1) + ' %' : '-';
-    const repSuccess = replay > 0 ? ((rep_v / replay) * 100).toFixed(1) + ' %' : '-';
+    // 【現状】
+    const totalNaki = `${X} 回`;
+    const naki2Prob = B > 0 ? `1/${(X / B).toFixed(1)}` : '-';
+    const totalVVal = J + K + L; // 大当り回数
+    const totalV = `${totalVVal} 回`;
+    const totalRounds = (J * 9) + (K * 4) + (L * 2);
+    const avgR = totalVVal > 0 ? `${(totalRounds / totalVVal).toFixed(1)} R` : '-';
 
-    const expR = totalV * 5.666;
-    const hikiR = totalV > 0 ? Math.round(((r10 * 10 + r5 * 5 + r3 * 3) - expR) * 125) : 0;
-    const hikiSp = Math.round((spV - (totalSp * (1/3))) * 700);
-    const hikiRep = Math.round((rep_v - (replay * 0.33)) * 700);
-    const hikiNorm = Math.round(((totalV - spV - rep_v) - (Math.max(0, totalPick - totalSp) * (1/18))) * 700);
+    // 【統計】
+    const nakiPerK = diffInvest > 0 ? `${(X / (diffInvest / 2)).toFixed(1)} 回` : '-';
+    const pickPerK = diffInvest > 0 ? `${(E / (diffInvest / 2)).toFixed(1)} 個` : '-';
+    const pickRate = X > 0 ? `${((E / X) * 100).toFixed(1)} %` : '-';
+    const hitProb = totalVVal > 0 ? `1/${(X / totalVVal).toFixed(1)}` : '-';
+    const yakuProb = totalVVal > 0 ? `1/${(E / totalVVal).toFixed(1)}` : '-';
+
+    // 【役物】
+    const kickRate = (E - G) > 0 ? `${((I / (E - G)) * 100).toFixed(1)} %` : '-';
+    const spRate = E > 0 ? `${((G / E) * 100).toFixed(1)} %` : '-';
+    const spSuccess = G > 0 ? `${((H / G) * 100).toFixed(1)} %` : '-';
+    const repSuccess = C > 0 ? `${((D / C) * 100).toFixed(1)} %` : '-';
+
+    // 【ヒキ】
+    const hikiR = Math.round((totalRounds - (totalVVal * 5)) * 110);
+    const hikiSp = Math.round((H - (G / 3)) * 550);
+    const hikiRep = Math.round((D - (I / 25.2)) * 550);
+    const hikiNorm = Math.round((F - (I / 8.4)) * 550);
     const hikiTotal = hikiR + hikiSp + hikiRep + hikiNorm;
 
     return {
         balls: `${diffInvest}ポチ`,
-        totalNaki: `${totalNaki} 回`,
+        totalNaki,
         naki2Prob,
-        totalV: `${totalV} 回`,
+        totalV,
         avgR,
         nakiPerK,
         pickPerK,
