@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v1.8</title>
+    <title>おだて豚 解析ダッシュボード v1.9</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -62,8 +62,6 @@
         table.cmp-table th, table.cmp-table td { border: 1px solid var(--border-color); padding: 3px 2px; }
         table.cmp-table th { background: #262633; color: #bbb; font-weight: normal; }
         .sec-hdr { background: #1a1a24; color: var(--accent-yellow); font-weight: bold; text-align: left; padding-left: 4px; font-size: 0.7rem; }
-        
-        /* 配色変更：プラスが緑、マイナスが赤 */
         .val-plus { color: var(--accent-green); font-weight: bold; }
         .val-minus { color: var(--accent-red); font-weight: bold; }
 
@@ -88,7 +86,7 @@
 <body>
 
 <div class="header-bar">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.8</span></h1>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v1.9</span></h1>
     <div class="header-actions">
         <a href="https://lion-nest.github.io/hanekita/" class="btn-nav">ハネキタ ↗</a>
         <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
@@ -291,17 +289,24 @@ const previewValues = document.getElementById('previewValues');
 const prevPochiLabel = document.getElementById('prevPochiLabel');
 const btnOpenEdit = document.getElementById('btnOpenEdit');
 
+// 初期設定・ローカルストレージ読込
 inputDate.value = new Date().toISOString().split('T')[0];
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
 gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
 inputShop.value = localStorage.getItem('odate_shop') || '';
 inputMachine.value = localStorage.getItem('odate_machine') || '';
 
+// 記録者の自動記憶（端末ごとに「自分」か「けん」かを復元）
+inputRecorder.value = localStorage.getItem('odate_recorder') || '自分';
+
 document.getElementById('btnOpenSetting').onclick = () => document.getElementById('settingModal').style.display = 'block';
 apiKeyInput.addEventListener('change', () => localStorage.setItem('odate_gemini_key', apiKeyInput.value.trim()));
 gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url', gasUrlInput.value.trim()));
 inputShop.addEventListener('change', () => localStorage.setItem('odate_shop', inputShop.value.trim()));
 inputMachine.addEventListener('change', () => localStorage.setItem('odate_machine', inputMachine.value.trim()));
+
+// 記録者を変更した際に即時保存
+inputRecorder.addEventListener('change', () => localStorage.setItem('odate_recorder', inputRecorder.value));
 
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -509,7 +514,6 @@ function calcMetrics(startSnap, endSnap) {
     const K = endSnap.r5 - start.r5;
     const L = endSnap.r3 - start.r3;
 
-    // 【現状】
     const totalNaki = `${X} 回`;
     const naki2Prob = B > 0 ? `1/${(X / B).toFixed(1)}` : '-';
     const totalVVal = J + K + L;
@@ -517,20 +521,17 @@ function calcMetrics(startSnap, endSnap) {
     const totalRounds = (J * 9) + (K * 4) + (L * 2);
     const avgR = totalVVal > 0 ? `${(totalRounds / totalVVal).toFixed(1)} R` : '-';
 
-    // 【統計】
     const nakiPerK = diffInvest > 0 ? `${(X / (diffInvest / 2)).toFixed(1)} 回` : '-';
     const pickPerK = diffInvest > 0 ? `${(E / (diffInvest / 2)).toFixed(1)} 個` : '-';
     const pickRate = X > 0 ? `${((E / X) * 100).toFixed(1)} %` : '-';
     const hitProb = totalVVal > 0 ? `1/${(X / totalVVal).toFixed(1)}` : '-';
     const yakuProb = totalVVal > 0 ? `1/${(E / totalVVal).toFixed(1)}` : '-';
 
-    // 【役物】
     const kickRate = (E - G) > 0 ? `${((I / (E - G)) * 100).toFixed(1)} %` : '-';
     const spRate = E > 0 ? `${((G / E) * 100).toFixed(1)} %` : '-';
     const spSuccess = G > 0 ? `${((H / G) * 100).toFixed(1)} %` : '-';
     const repSuccess = C > 0 ? `${((D / C) * 100).toFixed(1)} %` : '-';
 
-    // 【ヒキ】
     const hikiR = Math.round((totalRounds - (totalVVal * 5)) * 110);
     const hikiSp = Math.round((H - (G / 3)) * 550);
     const hikiRep = Math.round((D - (I / 25.2)) * 550);
@@ -560,7 +561,6 @@ function calcMetrics(startSnap, endSnap) {
     };
 }
 
-// プラスが緑、マイナスが赤
 function formatHiki(val) {
     if (val > 0) return `<span class="val-plus">+${val.toLocaleString()}玉</span>`;
     if (val < 0) return `<span class="val-minus">${val.toLocaleString()}玉</span>`;
@@ -644,7 +644,6 @@ btnSaveToSheet.onclick = async () => {
     }
 };
 
-// 過去台同期（メモがある場合はプルダウンに反映）
 document.getElementById('btnFetchPast').onclick = async () => {
     const gasUrl = gasUrlInput.value.trim();
     const curShop = inputShop.value.trim();
