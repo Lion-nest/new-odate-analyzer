@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v2.1</title>
+    <title>おだて豚 解析ダッシュボード v2.2</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -87,7 +87,7 @@
 <body>
 
 <div class="header-bar">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v2.1</span></h1>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v2.2</span></h1>
     <div class="header-actions">
         <a href="https://lion-nest.github.io/hanekita/" class="btn-nav">ハネキタ ↗</a>
         <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
@@ -290,7 +290,18 @@ const previewValues = document.getElementById('previewValues');
 const prevPochiLabel = document.getElementById('prevPochiLabel');
 const btnOpenEdit = document.getElementById('btnOpenEdit');
 
-inputDate.value = new Date().toISOString().split('T')[0];
+// 日本時間の今日の日付（YYYY-MM-DD）を取得してセット
+function getJSTTodayString() {
+    const now = new Date();
+    const jstDate = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60000);
+    const yyyy = jstDate.getFullYear();
+    const mm = String(jstDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(jstDate.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+inputDate.value = getJSTTodayString();
+
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
 gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
 inputShop.value = localStorage.getItem('odate_shop') || '';
@@ -640,7 +651,6 @@ btnSaveToSheet.onclick = async () => {
     }
 };
 
-// 日付フォーマット関数（時差ズレ防止）
 function formatPastDate(rawDate) {
     if (!rawDate) return '';
     if (typeof rawDate === 'string' && rawDate.includes('T')) {
@@ -654,7 +664,6 @@ function formatPastDate(rawDate) {
     return String(rawDate).split('T')[0].replace(/-/g, '/');
 }
 
-// 過去台同期（差玉/メモありを最優先で上に並び替え）
 document.getElementById('btnFetchPast').onclick = async () => {
     const gasUrl = gasUrlInput.value.trim();
     const curShop = inputShop.value.trim();
@@ -669,16 +678,13 @@ document.getElementById('btnFetchPast').onclick = async () => {
         const list = await res.json();
         const matched = list.filter(r => String(r['店舗名']) === curShop && String(r['台番号']) === curMachine);
 
-        // ① メモ（差玉）ありとメモなしに分割
         const withMemo = matched.filter(r => r['メモ'] && String(r['メモ']).trim() !== '');
         const withoutMemo = matched.filter(r => !r['メモ'] || String(r['メモ']).trim() === '');
 
-        // 日付が新しい順（降順）にソート
         const sortByDateDesc = (a, b) => new Date(b['日付'] || 0) - new Date(a['日付'] || 0);
         withMemo.sort(sortByDateDesc);
         withoutMemo.sort(sortByDateDesc);
 
-        // メモありを上に結合
         pastRecords = [...withMemo, ...withoutMemo];
         
         selectPastData.innerHTML = '<option value="">選択してください</option>';
