@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>おだて豚 解析ダッシュボード v2.2</title>
+    <title>おだて豚 解析ダッシュボード v2.3</title>
     <style>
         :root {
             --bg-main: #141419;
@@ -23,9 +23,10 @@
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         h1 { font-size: 0.95rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 4px; }
         .version-badge { background: #e67e22; color: #fff; font-size: 0.65rem; padding: 1px 4px; border-radius: 4px; }
-        .header-actions { display: flex; align-items: center; gap: 6px; }
-        .btn-nav { background: #2c3e50; border: 1px solid #4a627a; color: #5dade2; text-decoration: none; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; display: inline-flex; align-items: center; }
-        .btn-gear { background: #2c2c3d; border: 1px solid var(--border-color); color: #ccc; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; }
+        .header-actions { display: flex; align-items: center; gap: 5px; }
+        .btn-nav { background: #2c3e50; border: 1px solid #4a627a; color: #5dade2; text-decoration: none; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; display: inline-flex; align-items: center; }
+        .btn-gear { background: #2c2c3d; border: 1px solid var(--border-color); color: #ccc; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem; }
+        .btn-reset { background: #4a2323; border: 1px solid #782828; color: #ff9999; padding: 3px 6px; border-radius: 4px; font-size: 0.72rem; }
 
         .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; margin-bottom: 6px; }
         
@@ -68,7 +69,6 @@
         button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
         .btn-save { background: var(--accent-green); color: #000; width: 100%; padding: 8px; margin-top: 6px; font-size: 0.9rem; }
 
-        /* 下部固定ポチバー */
         .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a24; border-top: 1px solid var(--border-color); padding: 6px 8px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); max-height: 120px; overflow-y: auto; }
         .quick-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
         .pochi-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -87,8 +87,9 @@
 <body>
 
 <div class="header-bar">
-    <h1>🐷 おだて豚 解析 <span class="version-badge">v2.2</span></h1>
+    <h1>🐷 おだて豚 解析 <span class="version-badge">v2.3</span></h1>
     <div class="header-actions">
+        <button class="btn-reset" id="btnResetAll">🗑️クリア</button>
         <a href="https://lion-nest.github.io/hanekita/" class="btn-nav">ハネキタ ↗</a>
         <button class="btn-gear" id="btnOpenSetting">⚙️ 設定</button>
     </div>
@@ -132,6 +133,7 @@
     <label>📷 スクリーンショット追加 (10ポチ刻み)</label>
     <div class="upload-row">
         <div class="file-box">
+            <!-- iOSで余計な完了ボタンを回避しやすいようcapture属性なしの写真指定 -->
             <input type="file" id="fileInput" accept="image/*">
             <button class="btn-upload" onclick="document.getElementById('fileInput').click()">ファイルを選択</button>
             <div id="statusText" style="font-size:0.65rem; color:#aaa; margin-top:3px;">未選択</div>
@@ -290,7 +292,6 @@ const previewValues = document.getElementById('previewValues');
 const prevPochiLabel = document.getElementById('prevPochiLabel');
 const btnOpenEdit = document.getElementById('btnOpenEdit');
 
-// 日本時間の今日の日付（YYYY-MM-DD）を取得してセット
 function getJSTTodayString() {
     const now = new Date();
     const jstDate = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60000);
@@ -300,20 +301,97 @@ function getJSTTodayString() {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-inputDate.value = getJSTTodayString();
-
+// 設定値の復元
+inputDate.value = localStorage.getItem('odate_session_date') || getJSTTodayString();
 apiKeyInput.value = localStorage.getItem('odate_gemini_key') || '';
 gasUrlInput.value = localStorage.getItem('odate_gas_url') || '';
 inputShop.value = localStorage.getItem('odate_shop') || '';
 inputMachine.value = localStorage.getItem('odate_machine') || '';
 inputRecorder.value = localStorage.getItem('odate_recorder') || 'たいこ';
 
+// イベント監視
 document.getElementById('btnOpenSetting').onclick = () => document.getElementById('settingModal').style.display = 'block';
 apiKeyInput.addEventListener('change', () => localStorage.setItem('odate_gemini_key', apiKeyInput.value.trim()));
 gasUrlInput.addEventListener('change', () => localStorage.setItem('odate_gas_url', gasUrlInput.value.trim()));
 inputShop.addEventListener('change', () => localStorage.setItem('odate_shop', inputShop.value.trim()));
 inputMachine.addEventListener('change', () => localStorage.setItem('odate_machine', inputMachine.value.trim()));
 inputRecorder.addEventListener('change', () => localStorage.setItem('odate_recorder', inputRecorder.value));
+inputDate.addEventListener('change', () => localStorage.setItem('odate_session_date', inputDate.value));
+
+// --- セッション状態の自動保存＆自動復元ロジック ---
+function saveSessionToStorage() {
+    try {
+        localStorage.setItem('odate_snapshots', JSON.stringify(snapshots));
+        localStorage.setItem('odate_selected_pochis', JSON.stringify(Array.from(selectedPochis)));
+        if (lastUploadedBase64) {
+            localStorage.setItem('odate_last_base64', lastUploadedBase64);
+        }
+    } catch (e) {
+        console.warn('Storage quota exceeded or error:', e);
+    }
+}
+
+function restoreSessionFromStorage() {
+    const savedSnaps = localStorage.getItem('odate_snapshots');
+    if (savedSnaps) {
+        try {
+            snapshots = JSON.parse(savedSnaps);
+            const savedPochis = localStorage.getItem('odate_selected_pochis');
+            if (savedPochis) {
+                selectedPochis = new Set(JSON.parse(savedPochis));
+            } else {
+                applyRecentN(recentN);
+            }
+            lastUploadedBase64 = localStorage.getItem('odate_last_base64');
+            
+            if (snapshots.length > 0) {
+                const latest = snapshots[snapshots.length - 1];
+                updatePreviewBox(latest);
+                renderPochiButtons();
+                updateTable();
+                btnSaveToSheet.style.display = 'block';
+                statusText.style.color = '#2ecc71';
+                statusText.innerText = `【復元】${snapshots.length}件のデータを読込済`;
+            }
+        } catch (e) {
+            console.error('復元失敗:', e);
+        }
+    }
+}
+
+// 新台・新規稼働用のデータ全クリア
+document.getElementById('btnResetAll').onclick = () => {
+    if (confirm('本日の入力データ（全ポチ記録）をクリアして新しく開始しますか？\n※API設定などは保持されます')) {
+        snapshots = [];
+        selectedPochis.clear();
+        lastUploadedBase64 = null;
+        localStorage.removeItem('odate_snapshots');
+        localStorage.removeItem('odate_selected_pochis');
+        localStorage.removeItem('odate_last_base64');
+        inputDate.value = getJSTTodayString();
+        localStorage.setItem('odate_session_date', inputDate.value);
+
+        prevPochiLabel.innerText = '読込数値 (未取得)';
+        btnOpenEdit.style.display = 'none';
+        previewValues.innerHTML = `
+            <div>対象G: -</div>
+            <div>① 投:- ②:- リ:- リV:-</div>
+            <div>② 拾:- V:- SP:- SPV:-</div>
+            <div>③ 蹴:- 大:- 中:- 小:-</div>
+        `;
+        pochiContainer.innerHTML = '<span style="font-size: 0.7rem; color: #777; line-height: 26px;">スクショ追加でポチボタンが並びます</span>';
+        btnSaveToSheet.style.display = 'none';
+        fillColumn('c1', null);
+        fillColumn('c2', null);
+        document.getElementById('label_col1').innerText = '-';
+        document.getElementById('label_col2').innerText = '-';
+        statusText.style.color = '#aaa';
+        statusText.innerText = 'クリア完了';
+    }
+};
+
+// 起動時に自動復元を実行
+restoreSessionFromStorage();
 
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -335,6 +413,7 @@ fileInput.addEventListener('change', async (e) => {
         
         addSnapshot(rawResult);
         updatePreviewBox(rawResult);
+        saveSessionToStorage(); // 自動保存
         statusText.style.color = '#2ecc71';
         statusText.innerText = `【${rawResult.invest}P】完了！`;
         btnSaveToSheet.style.display = 'block';
@@ -459,6 +538,7 @@ document.getElementById('btnSaveEditedValues').onclick = () => {
 
     addSnapshot(updated);
     updatePreviewBox(updated);
+    saveSessionToStorage();
     document.getElementById('editModal').style.display = 'none';
 };
 
@@ -482,6 +562,7 @@ function renderPochiButtons() {
         btn.onclick = () => {
             if (selectedPochis.has(s.invest)) selectedPochis.delete(s.invest);
             else selectedPochis.add(s.invest);
+            saveSessionToStorage();
             renderPochiButtons();
             updateTable();
         };
@@ -491,9 +572,9 @@ function renderPochiButtons() {
 
 document.getElementById('btnRecentSub').onclick = () => { if (recentN > 10) { recentN -= 10; document.getElementById('spanN').innerText = recentN; } };
 document.getElementById('btnRecentAdd').onclick = () => { recentN += 10; document.getElementById('spanN').innerText = recentN; };
-document.getElementById('btnApplyRecent').onclick = () => { applyRecentN(recentN); renderPochiButtons(); updateTable(); };
-document.getElementById('btnSelectAll').onclick = () => { snapshots.forEach(s => selectedPochis.add(s.invest)); renderPochiButtons(); updateTable(); };
-document.getElementById('btnClearSelect').onclick = () => { selectedPochis.clear(); renderPochiButtons(); updateTable(); };
+document.getElementById('btnApplyRecent').onclick = () => { applyRecentN(recentN); saveSessionToStorage(); renderPochiButtons(); updateTable(); };
+document.getElementById('btnSelectAll').onclick = () => { snapshots.forEach(s => selectedPochis.add(s.invest)); saveSessionToStorage(); renderPochiButtons(); updateTable(); };
+document.getElementById('btnClearSelect').onclick = () => { selectedPochis.clear(); saveSessionToStorage(); renderPochiButtons(); updateTable(); };
 
 function applyRecentN(n) {
     selectedPochis.clear();
